@@ -1,0 +1,1211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Yaadgaar - Digital Legacy Vault</title>
+<meta name="theme-color" content="#1a1a2e">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" type="image/png" href="https://cdn-icons-png.flaticon.com/512/2913/2913520.png">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{--bg:linear-gradient(135deg,#1a1a2e 0%,#16213e 100%);--card:rgba(255,255,255,0.05);--border:rgba(255,255,255,0.1);--text:#e4e4e4;--muted:#888;--accent:#f39c12;--accent2:#e67e22;--input-bg:rgba(0,0,0,0.3);--input-border:#444}
+body.light{--bg:linear-gradient(135deg,#f5f7fa 0%,#c3cfe2 100%);--card:rgba(255,255,255,0.9);--border:rgba(0,0,0,0.1);--text:#2c3e50;--muted:#7f8c8d;--input-bg:#fff;--input-border:#ddd}
+*{margin:0;padding:0;box-sizing:border-box;font-family:'Segoe UI',sans-serif;-webkit-tap-highlight-color:transparent}
+body{background:var(--bg);color:var(--text);min-height:100vh;padding-bottom:80px;transition:0.3s}
+.container{max-width:700px;margin:0 auto;padding:20px}
+h1{text-align:center;color:var(--accent);margin-bottom:10px;font-size:28px}
+.tagline{text-align:center;color:var(--muted);margin-bottom:20px;font-style:italic}
+.card{background:var(--card);border:1px solid var(--border);border-radius:15px;padding:20px;margin-bottom:20px;backdrop-filter:blur(10px)}
+label{display:block;margin:10px 0 5px;color:var(--accent);font-weight:bold}
+input,textarea,select{width:100%;padding:12px;border-radius:8px;border:1px solid var(--input-border);background:var(--input-bg);color:var(--text);font-size:15px;margin-bottom:10px}
+textarea{min-height:180px;resize:vertical;line-height:1.5}
+button{width:100%;padding:14px;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;border:none;border-radius:8px;font-size:16px;font-weight:bold;cursor:pointer;margin-top:10px}
+button:hover{opacity:0.9}button:disabled{opacity:0.5;cursor:not-allowed}
+.btn-danger{background:linear-gradient(135deg,#e74c3c,#c0392b)}.btn-success{background:linear-gradient(135deg,#2ecc71,#27ae60)}.btn-secondary{background:linear-gradient(135deg,#3498db,#2980b9)}.btn-warning{background:linear-gradient(135deg,#f39c12,#e67e22)}
+.btn-small{width:auto;padding:8px 15px;font-size:13px;display:inline-block;margin:5px 5px 5px 0}
+.memory-item{background:rgba(243,156,18,0.1);border-left:3px solid var(--accent);padding:15px;margin:10px 0;border-radius:5px;position:relative}
+.memory-item.pinned{border-left-color:#e74c3c;background:rgba(231,76,60,0.1)}
+.memory-item h3{color:var(--accent);margin-bottom:8px}.memory-item small{color:var(--muted);display:block;margin:5px 0}
+.memory-item .tag{display:inline-block;background:rgba(52,152,219,0.3);padding:3px 10px;border-radius:12px;font-size:11px;margin-right:5px}
+.memory-item img,.memory-item video,.memory-item audio{max-width:100%;border-radius:8px;margin:10px 0}
+.pin-btn{position:absolute;top:10px;right:10px;background:transparent;border:none;font-size:20px;cursor:pointer;width:auto;padding:5px;margin:0}
+.status{padding:12px;border-radius:8px;margin:10px 0;text-align:center;font-size:14px;line-height:1.5}
+.status.success{background:rgba(46,204,113,0.2);color:#2ecc71;border:1px solid rgba(46,204,113,0.3)}
+.status.warning{background:rgba(241,196,15,0.2);color:#f1c40f;border:1px solid rgba(241,196,15,0.3)}
+.status.info{background:rgba(52,152,219,0.2);color:#3498db;border:1px solid rgba(52,152,219,0.3)}
+.hidden{display:none !important;}
+.info-box{background:rgba(46,204,113,0.1);border-left:3px solid #2ecc71;padding:12px;margin:10px 0;border-radius:5px;font-size:13px;color:var(--text)}
+.warning-box{background:rgba(241,196,15,0.1);border-left:3px solid #f1c40f;padding:12px;margin:10px 0;border-radius:5px;font-size:13px;color:#f1c40f}
+.danger-box{background:rgba(231,76,60,0.1);border-left:3px solid #e74c3c;padding:12px;margin:10px 0;border-radius:5px;font-size:13px;color:#e74c3c}
+.theme-toggle{position:fixed;top:20px;right:20px;background:var(--card);border:1px solid var(--border);border-radius:50%;cursor:pointer;font-size:20px;z-index:100;width:auto;padding:8px 12px;margin:0}
+.notif-toggle{position:fixed;top:20px;right:70px;background:var(--card);border:1px solid var(--border);border-radius:50%;cursor:pointer;font-size:20px;z-index:100;width:auto;padding:8px 12px;margin:0}
+.lock-toggle{position:fixed;top:20px;right:120px;background:var(--card);border:1px solid var(--border);border-radius:50%;cursor:pointer;font-size:20px;z-index:100;width:auto;padding:8px 12px;margin:0}
+.dashboard-grid{display:grid;grid-template-columns:1fr 1fr;gap:15px;margin:20px 0}
+.stat-card{background:var(--card);border:1px solid var(--border);padding:20px;border-radius:12px;text-align:center;cursor:pointer;transition:0.2s}
+.stat-card:hover{transform:translateY(-3px);box-shadow:0 5px 15px rgba(243,156,18,0.3);border-color:var(--accent)}
+.stat-card .number{font-size:36px;font-weight:bold;color:var(--accent);display:block}.stat-card .label{color:var(--muted);font-size:13px;margin-top:5px}
+.template-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin:15px 0}
+.template-card{background:var(--card);border:1px solid var(--border);padding:12px;border-radius:8px;cursor:pointer;text-align:center;transition:0.2s}
+.template-card:hover{border-color:var(--accent);transform:translateY(-2px)}.template-card .emoji{font-size:24px;display:block;margin-bottom:5px}.template-card .title{font-size:13px;color:var(--text)}
+.media-preview{display:flex;gap:10px;flex-wrap:wrap;margin:10px 0}.media-preview-item{background:var(--card);padding:10px;border-radius:8px;position:relative}.media-preview-item img,.media-preview-item video{max-width:150px;max-height:150px;border-radius:5px}
+.contact-item{background:var(--card);padding:12px;margin:8px 0;border-radius:8px;display:flex;justify-content:space-between;align-items:center}.contact-item .info{flex:1}.contact-item .info strong{color:var(--accent)}.contact-item .info small{color:var(--muted);display:block}
+.voice-input-wrapper{position:relative}#micBtn{position:absolute;right:10px;bottom:15px;background:#e74c3c;border:none;border-radius:50%;width:40px;height:40px;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;margin:0;padding:0}
+#micBtn.listening{animation:pulse 1.5s infinite;background:#c0392b}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(231,76,60,0.7)}70%{box-shadow:0 0 0 10px rgba(231,76,60,0)}100%{box-shadow:0 0 0 0 rgba(231,76,60,0)}}
+.recorder-row{display:flex;gap:10px;align-items:center;margin:10px 0}#recBtn{flex:1;margin:0}#recBtn.recording{background:linear-gradient(135deg,#c0392b,#e74c3c);animation:pulse 1.5s infinite}#recTimer{min-width:60px;text-align:center;font-weight:bold;color:var(--accent)}
+.modal-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.85);z-index:1000;display:flex;align-items:center;justify-content:center;padding:20px}
+.modal-content{background:var(--bg);border:1px solid var(--border);border-radius:15px;padding:25px;max-width:600px;width:100%;max-height:85vh;overflow-y:auto;position:relative;box-shadow:0 10px 30px rgba(0,0,0,0.5)}
+.modal-close{position:absolute;top:10px;right:15px;background:rgba(255,255,255,0.1);border:none;color:var(--text);font-size:24px;cursor:pointer;width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0;padding:0;line-height:1}
+.encrypted-placeholder{background:rgba(52,152,219,0.1);border:1px dashed #3498db;padding:15px;border-radius:8px;text-align:center;margin:10px 0}.encrypted-placeholder button{width:auto;padding:8px 16px;font-size:13px;margin-top:8px;background:linear-gradient(135deg,#3498db,#2980b9)}
+.scheduled-item{background:rgba(155,89,182,0.1);border-left:3px solid #9b59b6;padding:15px;margin:10px 0;border-radius:5px}.scheduled-item.locked{opacity:0.7}.scheduled-item.unlocked{border-left-color:#2ecc71;background:rgba(46,204,113,0.1)}
+.scheduled-badge{display:inline-block;padding:3px 10px;border-radius:12px;font-size:11px;font-weight:bold}.scheduled-badge.locked{background:rgba(231,76,60,0.3);color:#e74c3c}.scheduled-badge.unlocked{background:rgba(46,204,113,0.3);color:#2ecc71}
+.dms-banner{padding:15px;border-radius:10px;margin-bottom:15px;display:flex;align-items:center;gap:12px}
+.dms-banner.warning{background:rgba(241,196,15,0.15);border:1px solid #f1c40f;color:#f1c40f}.dms-banner.urgent{background:rgba(231,76,60,0.15);border:1px solid #e74c3c;color:#e74c3c}.dms-banner.critical{background:rgba(192,57,43,0.2);border:2px solid #c0392b;color:#fff}
+.bottom-nav{position:fixed;bottom:0;left:0;right:0;background:var(--card);border-top:1px solid var(--border);display:flex;justify-content:space-around;padding:10px 0;z-index:100;backdrop-filter:blur(10px)}
+.nav-item{flex:1;text-align:center;cursor:pointer;padding:8px;transition:0.2s;color:var(--muted)}.nav-item.active{color:var(--accent)}.nav-item .nav-icon{font-size:24px;display:block;margin-bottom:4px}.nav-item .nav-label{font-size:11px;font-weight:bold}
+.page{animation:fadeIn 0.3s ease}@keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+.app-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;padding-bottom:15px;border-bottom:1px solid var(--border)}.app-header h3{color:var(--accent);font-size:20px}
+.toggle-container{display:flex;align-items:center;justify-content:space-between;background:var(--card);border:1px solid var(--border);border-radius:10px;padding:15px;margin:10px 0}.toggle-label{color:var(--text);font-size:14px}
+.toggle-switch{position:relative;width:50px;height:26px}.toggle-switch input{opacity:0;width:0;height:0}.toggle-slider{position:absolute;cursor:pointer;inset:0;background:#555;transition:0.3s;border-radius:26px}.toggle-slider:before{content:"";position:absolute;height:20px;width:20px;left:3px;bottom:3px;background:#fff;transition:0.3s;border-radius:50%}.toggle-switch input:checked+.toggle-slider{background:var(--accent)}.toggle-switch input:checked+.toggle-slider:before{transform:translateX(24px)}
+.premium-benefits{text-align:left;margin:15px 0;padding:15px;background:rgba(155,89,182,0.1);border-radius:10px;border:1px solid #9b59b6}
+.premium-benefits li{margin:8px 0;font-size:14px;list-style:none}
+.premium-benefits li:before{content:'✅ ';margin-right:5px}
+.profile-header{text-align:center;padding:20px 0}
+.profile-avatar{width:100px;height:100px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent2));display:flex;align-items:center;justify-content:center;font-size:48px;font-weight:bold;color:#fff;margin:0 auto 15px;border:4px solid var(--card);cursor:pointer;position:relative;overflow:hidden}
+.profile-avatar img{width:100%;height:100%;object-fit:cover}
+.profile-name{font-size:24px;font-weight:bold;color:var(--accent);margin-bottom:5px}
+.profile-email{color:var(--muted);font-size:14px;margin-bottom:20px}
+.profile-stats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:20px}
+.profile-stat{background:var(--input-bg);padding:10px;border-radius:10px;text-align:center}
+.profile-stat .num{font-size:20px;font-weight:bold;color:var(--accent);display:block}
+.profile-stat .lbl{font-size:11px;color:var(--muted)}
+.profile-menu{display:flex;flex-direction:column;gap:10px}
+.profile-btn{width:100%;padding:15px;background:var(--card);border:1px solid var(--border);border-radius:10px;color:var(--text);font-size:16px;text-align:left;display:flex;align-items:center;gap:15px;cursor:pointer;transition:0.2s}
+.profile-btn:hover{background:rgba(255,255,255,0.1)}
+.profile-btn .icon{font-size:20px;width:30px;text-align:center}
+.delete-list{text-align:left;margin:15px 0;padding:15px;background:rgba(231,76,60,0.05);border-radius:10px;border:1px solid rgba(231,76,60,0.2)}
+.delete-list li{margin:8px 0;font-size:14px;list-style:none;color:var(--text)}
+.delete-list li:before{content:'🗑️ ';margin-right:5px}
+.danger-zone{background:rgba(231,76,60,0.05);border:1px dashed rgba(231,76,60,0.4);border-radius:10px;padding:15px;margin-top:15px}
+.danger-zone h4{color:#e74c3c;margin-bottom:10px;font-size:14px}
+.password-wrapper{position:relative}
+.eye-btn{position:absolute;right:10px;top:12px;background:none;border:none;color:var(--muted);font-size:18px;cursor:pointer;padding:0;margin:0;width:auto}
+.notif-item{background:var(--card);border-left:3px solid var(--accent);padding:12px;margin:10px 0;border-radius:5px}.notif-item.urgent{border-left-color:#e74c3c}.notif-item.success{border-left-color:#2ecc71}.notif-item .time{font-size:11px;color:var(--muted);display:block;margin-top:5px}
+.auth-toggle{text-align:center;display:block;margin-top:15px;color:var(--accent);cursor:pointer;font-size:14px;font-weight:bold}
+.forgot-link{text-align:center;display:block;margin-top:10px;color:#3498db;cursor:pointer;font-size:13px;text-decoration:underline}
+.terms-container{text-align:center;margin-top:15px;font-size:13px;color:var(--muted);display:flex;align-items:center;justify-content:center;gap:8px}
+.terms-container input{width:auto;margin:0}
+.terms-container a{color:#3498db;text-decoration:underline;cursor:pointer}
+.onboard-wrap{position:relative;min-height:calc(100vh - 40px);display:flex;flex-direction:column;justify-content:center;overflow:hidden}
+.onboard-track{display:flex;transition:transform 0.45s cubic-bezier(0.4,0,0.2,1);width:300%}
+.onb-slide{width:33.333%;flex-shrink:0;padding:30px 20px;text-align:center;min-height:70vh;display:flex;flex-direction:column;justify-content:center}
+.onb-slide .big-icon{font-size:72px;display:block;margin-bottom:20px;animation:float 3s ease-in-out infinite}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+.onb-slide h2{color:var(--accent);font-size:26px;margin-bottom:12px;line-height:1.3}
+.onb-slide .en-text{color:var(--text);font-size:16px;line-height:1.6;margin-bottom:20px;font-style:italic;max-width:400px;margin-left:auto;margin-right:auto}
+.onb-dots{display:flex;justify-content:center;gap:10px;margin:25px 0 15px}.onb-dot{width:10px;height:10px;border-radius:50%;background:rgba(255,255,255,0.2);transition:0.3s;cursor:pointer}.onb-dot.active{background:var(--accent);width:28px;border-radius:5px}
+.onb-btn-row{display:flex;gap:10px;max-width:420px;margin:0 auto;width:100%}.onb-btn-row button{margin:0}
+.skip-btn{position:absolute;top:20px;right:20px;background:transparent;border:none;color:var(--muted);font-size:13px;cursor:pointer;width:auto;padding:8px 12px;margin:0;text-decoration:underline;z-index:10}
+.slide-counter{position:absolute;top:20px;left:20px;background:rgba(255,255,255,0.08);padding:6px 14px;border-radius:20px;font-size:12px;color:var(--muted);z-index:10}
+.search-bar{width:100%;padding:10px 15px;border-radius:20px;border:1px solid var(--border);background:var(--input-bg);color:var(--text);font-size:14px;margin-bottom:15px}
+.search-bar:focus{outline:none;border-color:var(--accent)}
+.folder-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:15px;flex-wrap:wrap;gap:10px}
+.folder-header h2{color:var(--accent);margin:0}
+
+/* SPLASH SCREEN */
+#splashScreen {
+  position: fixed; inset: 0; background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+  z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  transition: opacity 0.6s ease-out, visibility 0.6s;
+}
+#splashScreen.hidden { opacity: 0; visibility: hidden; pointer-events: none; }
+.splash-logo { font-size: 80px; animation: float 2s ease-in-out infinite; }
+.splash-text { color: var(--accent); font-size: 28px; font-weight: bold; margin-top: 20px; letter-spacing: 2px; }
+.splash-loader { width: 40px; height: 40px; border: 4px solid rgba(243,156,18,0.3); border-top: 4px solid var(--accent); border-radius: 50%; animation: spin 1s linear infinite; margin-top: 30px; }
+@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+/* UPGRADE BUTTONS */
+.upgrade-btn-yearly, .upgrade-btn-lifetime {
+  flex: 1 !important; padding: 15px !important; border: none !important; border-radius: 8px !important;
+  color: #fff !important; font-weight: bold !important; font-size: 15px !important; cursor: pointer !important;
+  position: relative !important; z-index: 100 !important; pointer-events: auto !important;
+  touch-action: manipulation !important; -webkit-tap-highlight-color: rgba(255,255,255,0.3) !important; margin-top: 0 !important;
+}
+.upgrade-btn-yearly { background: linear-gradient(135deg, #3498db, #2980b9) !important; }
+.upgrade-btn-lifetime { background: linear-gradient(135deg, #9b59b6, #8e44ad) !important; }
+</style>
+</head>
+<body>
+
+<!-- SPLASH SCREEN -->
+<div id="splashScreen">
+  <div class="splash-logo">🕯️</div>
+  <div class="splash-text">Yaadgaar</div>
+  <div class="splash-loader"></div>
+</div>
+
+<button class="theme-toggle" onclick="toggleTheme()">🌓</button>
+<button class="notif-toggle hidden" id="bellBtn" onclick="openNotifications()">🔔</button>
+<button class="lock-toggle hidden" id="lockBtn" onclick="lockVault()">🔒</button>
+
+<div class="container">
+  <!-- ONBOARDING -->
+  <div id="onboardingScreen" class="onboard-wrap hidden">
+    <span class="slide-counter" id="slideCounter">1 / 3</span>
+    <button class="skip-btn" onclick="completeOnboarding()">Skip →</button>
+    <div class="onboard-track" id="onboardTrack">
+      <div class="onb-slide"><span class="big-icon">🕯️</span><h2>Welcome to Yaadgaar</h2><p class="en-text">"Some memories are too precious to be lost."</p></div>
+      <div class="onb-slide"><span class="big-icon">⚡</span><h2>Why Yaadgaar?</h2><p class="en-text">Bank-Level Encryption. Time Capsules. Dead Man's Switch.</p></div>
+      <div class="onb-slide"><span class="big-icon">🚀</span><h2>Your Voice. Their Future.</h2><p class="en-text">"Because love deserves to last forever."</p><button onclick="completeOnboarding()" style="max-width:320px;margin:20px auto 0;">🚀 Get Started — It's Free</button></div>
+    </div>
+    <div class="onb-dots" id="onbDots"><div class="onb-dot active" onclick="goToSlide(0)"></div><div class="onb-dot" onclick="goToSlide(1)"></div><div class="onb-dot" onclick="goToSlide(2)"></div></div>
+    <div class="onb-btn-row"><button class="btn-secondary" id="onbBackBtn" onclick="prevSlide()" style="display:none">← Back</button><button id="onbNextBtn" onclick="nextSlide()">Next →</button></div>
+  </div>
+
+  <!-- AUTH SCREEN -->
+  <div id="authScreen" class="card hidden">
+    <h1>🕯️ Yaadgaar</h1>
+    <p class="tagline">Your memories, your rules, secure forever</p>
+    <h2 id="authTitle" style="color:var(--accent);text-align:center" data-i18n="loginTitle">🔐 Login</h2>
+    <label>Email:</label><input type="email" id="authEmail" placeholder="your@email.com">
+    <label>Password:</label>
+    <div class="password-wrapper">
+      <input type="password" id="authPassword" placeholder="Min 6 characters" style="padding-right:40px">
+      <button class="eye-btn" onclick="togglePassword('authPassword', this)">👁️</button>
+    </div>
+    <div id="termsContainer" class="terms-container hidden">
+      <input type="checkbox" id="agreeTerms">
+      <label for="agreeTerms" style="margin:0;cursor:pointer;">I agree to the <a onclick="openModal('termsModal')">Terms & Conditions</a> and <a onclick="openModal('privacyModal')">Privacy Policy</a></label>
+    </div>
+    <button id="authBtn" onclick="handleAuth()" data-i18n="loginBtn">🔓 Login</button>
+    <div class="forgot-link" onclick="openForgotPasswordModal()">Forgot password? Reset with Recovery Key</div>
+    <div id="pinLoginBtnContainer" style="display:none; margin-top:10px;">
+      <button onclick="openPinLoginModal()" class="btn-secondary" style="background:transparent; border:1px solid #2ecc71; color:#2ecc71;">🔢 Login with 4-Digit PIN</button>
+    </div>
+    <div class="auth-toggle" onclick="toggleAuthMode()" id="authToggleText" data-i18n="signupToggle">Create new account (Sign Up)</div>
+    <div id="authStatus" class="status" style="display:none"></div>
+  </div>
+  <!-- DASHBOARD -->
+  <div id="dashboard" class="hidden">
+    <div class="app-header">
+      <h3>Hello, <span id="userNameDisplay">User</span>! <span id="planBadge" style="font-size:12px; background:var(--accent); color:#000; padding:2px 8px; border-radius:10px; margin-left:5px;">FREE</span></h3>
+    </div>
+
+    <!-- HOME PAGE -->
+    <div id="homePage" class="page">
+      <div id="dmsWarningBanner" class="dms-banner hidden"></div>
+      <div class="card">
+        <h2 style="color:var(--accent);margin-bottom:15px" data-i18n="vaultOverview">🏠 Your Vault Overview</h2>
+        <div class="dashboard-grid">
+          <div class="stat-card" onclick="switchTab('memories')"><span class="number" id="statMemories">0/30</span><span class="label" data-i18n="memoriesLabel">📝 Memories</span></div>
+          <div class="stat-card" onclick="openCapsuleFolder()"><span class="number" id="statScheduled">0</span><span class="label" data-i18n="capsulesLabel">📅 Capsules</span></div>
+          <div class="stat-card" onclick="switchTab('contacts')"><span class="number" id="statContacts">0</span><span class="label" data-i18n="contactsLabel">👥 Contacts</span></div>
+          <div class="stat-card" onclick="openModal('settingsModal')"><span class="number" id="statDays">0</span><span class="label" data-i18n="daysLabel">📅 Days Active</span></div>
+        </div>
+        <div class="info-box" style="margin-top:15px" data-i18n="encryptedInfo">🔒 <strong>Fully End-to-End Encrypted:</strong> Your files, messages and trusted contacts are all locked on your device.</div>
+      </div>
+    </div>
+
+    <!-- MEMORIES PAGE -->
+    <div id="memoriesPage" class="page hidden">
+      <div class="card">
+        <div class="folder-header">
+          <h2 data-i18n="yourMemories">📚 Your Memories</h2>
+          <button onclick="openAddMemoryModal()" class="btn-small btn-success" style="margin:0" data-i18n="addNewBtn">➕ Add New</button>
+        </div>
+        <div class="usage-counter" style="background:rgba(243,156,18,0.1);border:1px solid rgba(243,156,18,0.3);border-radius:8px;padding:10px 15px;margin:10px 0;font-size:13px;color:var(--accent);display:flex;justify-content:space-between;align-items:center">
+          <span>📸 Photos: <span class="count" id="photoCounter" style="font-weight:bold;font-size:16px">0/10</span></span>
+          <span style="margin-left:10px">🎤 Audio: <span class="count" id="audioCounter" style="font-weight:bold;font-size:16px">0/10</span></span>
+        </div>
+        <input type="text" class="search-bar" id="memorySearch" placeholder="🔍 Search memories..." data-i18n-placeholder="searchMemories" oninput="filterMemories()">
+        <div id="memoryList"></div>
+      </div>
+    </div>
+
+    <!-- CONTACTS PAGE -->
+    <div id="contactsPage" class="page hidden">
+      <div class="card">
+        <div class="folder-header">
+          <h2 data-i18n="yourContacts">📋 Your Trusted Contacts</h2>
+          <button onclick="openAddContactModal()" class="btn-small btn-success" style="margin:0" data-i18n="addNewBtn">➕ Add New</button>
+        </div>
+        <input type="text" class="search-bar" id="contactSearch" placeholder="🔍 Search contacts..." data-i18n-placeholder="searchContacts" oninput="filterContacts()">
+        <div id="contactsList"></div>
+      </div>
+    </div>
+
+    <!-- PROFILE PAGE (With Share Button) -->
+    <div id="profilePage" class="page hidden">
+      <div class="card">
+        <div class="profile-header">
+          <label for="profilePhotoInput" class="profile-avatar" id="profileAvatar" style="cursor:pointer;" title="Click to change photo">
+            <span id="profileAvatarText">U</span>
+            <img id="profileAvatarImg" src="" style="display:none; width:100%; height:100%; object-fit:cover; border-radius:50%;">
+            <input type="file" id="profilePhotoInput" accept="image/*" style="display:none" onchange="uploadProfilePhoto(this)">
+          </label>
+          <div class="profile-name" id="profileName">User</div>
+          <div class="profile-email" id="profileEmail">user@email.com</div>
+        </div>
+        
+        <div class="profile-stats">
+          <div class="profile-stat"><span class="num" id="profStatMem">0</span><span class="lbl" data-i18n="memoriesLabel">Memories</span></div>
+          <div class="profile-stat"><span class="num" id="profStatCont">0</span><span class="lbl" data-i18n="contactsLabel">Contacts</span></div>
+          <div class="profile-stat"><span class="num" id="profStatCap">0</span><span class="lbl" data-i18n="capsulesLabel">Capsules</span></div>
+        </div>
+        
+        <div class="profile-menu">
+          <div style="display:flex; align-items:center; gap:10px; background:var(--card); padding:10px; border-radius:10px; border:1px solid var(--border); margin-bottom:10px;">
+            <span style="font-size:20px;">🌐</span>
+            <select id="languageSelect" onchange="changeLanguage(this.value)" style="flex:1; background:transparent; color:var(--text); border:none; font-size:16px; outline:none;">
+              <option value="en">🇬🇧 English</option>
+              <option value="hi">🇮🇳 हिन्दी (Hindi)</option>
+            </select>
+          </div>
+
+          <button class="profile-btn" onclick="openModal('settingsModal')" data-i18n="settingsBtn"><span class="icon">⚙️</span> Settings & Preferences</button>
+          <button class="profile-btn" onclick="openModal('recoveryModal')" data-i18n="recoveryBtn"><span class="icon">🔑</span> Recovery Key</button>
+          <button class="profile-btn" onclick="openSetPinModal()" data-i18n="pinBtn"><span class="icon">🔢</span> Set / Change 4-Digit PIN</button>
+          <button class="profile-btn" onclick="openUpgradeModal()" data-i18n="upgradeBtn"><span class="icon">👑</span> Upgrade to Premium</button>
+          
+          <!-- SHARE APP BUTTON -->
+          <button class="profile-btn" onclick="shareApp()" style="background: linear-gradient(135deg, #2ecc71, #27ae60); color: #fff; border: none;">
+            <span class="icon">📤</span> Share Yaadgaar App
+          </button>
+          
+          <button class="profile-btn" onclick="handleLogout()" data-i18n="logoutBtn"><span class="icon">🚪</span> Logout</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- BOTTOM NAVIGATION -->
+<div id="bottomNav" class="bottom-nav hidden">
+  <div class="nav-item active" onclick="switchTab('home')"><span class="nav-icon">🏠</span><span class="nav-label" data-i18n="navHome">Home</span></div>
+  <div class="nav-item" onclick="switchTab('memories')"><span class="nav-icon">📝</span><span class="nav-label" data-i18n="navMemories">Memories</span></div>
+  <div class="nav-item" onclick="switchTab('contacts')"><span class="nav-icon">👥</span><span class="nav-label" data-i18n="navContacts">Contacts</span></div>
+  <div class="nav-item" onclick="switchTab('profile')"><span class="nav-icon">👤</span><span class="nav-label" data-i18n="navProfile">Profile</span></div>
+</div>
+<!-- SETTINGS MODAL -->
+<div id="settingsModal" class="modal-overlay hidden">
+  <div class="modal-content">
+    <button class="modal-close" onclick="closeModal('settingsModal')">✕</button>
+    <h3 data-i18n="settingsTitle">⚙️ Settings</h3>
+    <div class="info-box">Your data is End-to-End Encrypted.</div>
+    <button onclick="testVoice()" class="btn-secondary" style="margin-top:10px">🔊 Test Voice</button>
+    <div id="dmsInfo" class="danger-box" style="margin-top:15px">
+      <strong>⏳ Dead Man's Switch (Inactive Days)</strong><br><br>
+      <div id="dmsViewMode">
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+          <div><div style="font-size:13px; color:var(--muted);">Alert after:</div><div style="font-size:28px; font-weight:bold; color:var(--accent);"><span id="dmsDisplayDays">30</span> days</div></div>
+          <button onclick="editDmsDays()" class="btn-small btn-secondary" style="margin:0; width:auto;">✏️ Edit</button>
+        </div>
+      </div>
+      <div id="dmsEditMode" class="hidden">
+        <label style="color:var(--text); font-size:13px; margin:0;">Set alert after (days):</label>
+        <div style="display:flex; gap:10px; margin-top:5px;">
+          <input type="number" id="dmsDaysInput" min="7" max="365" value="30" style="margin:0; flex:1;">
+          <button onclick="saveDmsDays()" class="btn-small btn-success" style="margin:0; width:auto;">💾 Save</button>
+          <button onclick="cancelDmsEdit()" class="btn-small btn-danger" style="margin:0; width:auto;">❌ Cancel</button>
+        </div>
+      </div>
+      <div class="toggle-container" style="margin-top:15px; background:rgba(52,152,219,0.1); border-color:#3498db;">
+        <div><div class="toggle-label" style="font-weight:bold;color:#3498db">✈️ Vacation Mode</div><div style="font-size:11px;color:var(--muted);margin-top:3px">Pause alerts while you are away</div></div>
+        <label class="toggle-switch"><input type="checkbox" id="vacationModeToggle" onchange="toggleVacationMode()"><span class="toggle-slider"></span></label>
+      </div>
+      <br><small>Last Login: <span id="lastLoginDisplay">Never</span></small>
+    </div>
+    <button onclick="openModal('privacyModal')" class="btn-secondary" style="margin-top:10px">📜 Privacy Policy</button>
+    <button onclick="openModal('termsModal')" class="btn-secondary" style="margin-top:10px">📄 Terms & Conditions</button>
+    <button onclick="openModal('feedbackModal')" class="btn-success" style="margin-top:10px">💬 Send Feedback</button>
+    <div class="danger-zone">
+      <h4>⚠️ Danger Zone</h4>
+      <p style="font-size:12px; color:var(--muted); margin-bottom:10px;">Once you delete your account, there is no going back.</p>
+      <button onclick="openDeleteModal()" class="btn-danger" data-i18n="deleteBtn">🗑️ Delete My Account Permanently</button>
+    </div>
+  </div>
+</div>
+
+<!-- PIN LOGIN MODAL -->
+<div id="pinLoginModal" class="modal-overlay hidden">
+  <div class="modal-content" style="text-align:center; max-width:350px;">
+    <button class="modal-close" onclick="closePinAndShowLogin()">✕</button>
+    <h3 data-i18n="enterPinTitle">🔢 Enter Your PIN</h3>
+    <p style="color:var(--muted); font-size:14px; margin-bottom:15px;">Enter your 4-digit secret PIN</p>
+    <input type="password" id="pinInput" maxlength="4" pattern="[0-9]*" inputmode="numeric" style="font-size:28px; text-align:center; letter-spacing:15px; margin:10px 0;" placeholder="****">
+    <button onclick="handlePinLogin()" class="btn-success" data-i18n="unlockVaultBtn">Unlock Vault</button>
+    <button onclick="closePinAndShowLogin()" class="btn-secondary" style="margin-top:10px; background:transparent; border:1px solid var(--border); color:var(--text);">🔑 Use Password Instead</button>
+    <div id="pinLoginStatus" class="status" style="display:none"></div>
+  </div>
+</div>
+
+<!-- SET PIN MODAL -->
+<div id="setPinModal" class="modal-overlay hidden">
+  <div class="modal-content">
+    <button class="modal-close" onclick="closeModal('setPinModal')">✕</button>
+    <h3 data-i18n="setPinTitle">🔢 Set 4-Digit PIN</h3>
+    <div class="info-box">Create a 4-digit PIN for quick login. You must enter your correct account password to secure this PIN.</div>
+    <label data-i18n="newPinLabel">New 4-Digit PIN:</label>
+    <input type="password" id="newPinInput" maxlength="4" pattern="[0-9]*" inputmode="numeric" style="font-size:24px; text-align:center; letter-spacing:10px;" placeholder="****">
+    <label data-i18n="confirmPassLabel">Confirm Your Account Password:</label>
+    <input type="password" id="pinPasswordInput" placeholder="Enter your current password">
+    <button onclick="saveNewPin()" class="btn-success" data-i18n="savePinBtn">💾 Save PIN</button>
+    <button onclick="removePin()" class="btn-danger" style="margin-top:10px; background:transparent; border:1px solid #e74c3c; color:#e74c3c" data-i18n="removePinBtn">🗑️ Remove Existing PIN</button>
+    <div id="setPinStatus" class="status" style="display:none"></div>
+  </div>
+</div>
+
+<!-- ADD MEMORY MODAL -->
+<div id="addMemoryModal" class="modal-overlay hidden">
+  <div class="modal-content">
+    <button class="modal-close" onclick="closeModal('addMemoryModal')">✕</button>
+    <h3 data-i18n="addMemoryTitle">📝 Add New Memory</h3>
+    <div class="warning-box">⚠️ Free Plan: Max 30 memories • Max 10 photos • Max 10 audio • Videos are Premium only</div>
+    <div class="template-grid">
+      <div class="template-card" onclick="useTemplate('letter')"><span class="emoji">💌</span><span class="title">Letter</span></div>
+      <div class="template-card" onclick="useTemplate('financial')"><span class="emoji">💰</span><span class="title">Financial</span></div>
+      <div class="template-card" onclick="useTemplate('will')"><span class="emoji">📜</span><span class="title">Will</span></div>
+    </div>
+    <label data-i18n="titleLabel">Title:</label><input type="text" id="memoryTitle" placeholder="E.g.: Letter for Mom">
+    <label>Category:</label><select id="memoryCategory"><option value="family">👨‍👩‍👧 Family</option><option value="financial">💰 Financial</option><option value="other">📌 Other</option></select>
+    <label data-i18n="messageLabel">Message:</label>
+    <div class="voice-input-wrapper"><textarea id="memoryText" placeholder="Write your message here..."></textarea><button id="micBtn" onclick="toggleVoice()" title="Voice to Text">🎙️</button></div>
+    <label>🎤 Voice Note:</label>
+    <div class="recorder-row"><button id="recBtn" onclick="toggleRecord()" class="btn-secondary">🔴 Start Recording</button><span id="recTimer">0:00</span></div>
+    <label>📸 Photo / 📄 Document (Max 2MB):</label><input type="file" id="memoryFile" accept="image/*,.pdf,.doc,.docx,.txt" onchange="previewFile()">
+    <button onclick="openUpgradeModal()" class="btn-warning" style="margin-top:15px; background:linear-gradient(135deg,#9b59b6,#8e44ad)">🎥 Record Video (Premium Only)</button>
+    <div class="media-preview" id="mediaPreview"></div>
+    <button id="saveBtn" onclick="saveMemory()" class="btn-success">🔒 Encrypt & Save to Cloud</button>
+    <div id="saveStatus" class="status" style="display:none"></div>
+  </div>
+</div>
+
+<!-- ADD CONTACT MODAL (No Photo - Fast & Clean) -->
+<div id="addContactModal" class="modal-overlay hidden">
+  <div class="modal-content">
+    <button class="modal-close" onclick="closeModal('addContactModal')">✕</button>
+    <h3 data-i18n="addContactTitle">👥 Add Trusted Contact</h3>
+    <div class="info-box">🔒 This data is also End-to-End Encrypted.</div>
+    <label data-i18n="contactNameLabel">Contact Name:</label><input type="text" id="contactName" placeholder="E.g.: Brother">
+    <label data-i18n="contactEmailLabel">Email:</label><input type="email" id="contactEmail" placeholder="email@example.com">
+    <label data-i18n="emergencyPassLabel">Emergency Password:</label>
+    <div class="password-wrapper">
+      <input type="password" id="contactPassword" placeholder="Min 6 chars" style="padding-right:40px">
+      <button class="eye-btn" onclick="togglePassword('contactPassword', this)">👁️</button>
+    </div>
+    <button id="addContactBtn" onclick="addContact()" class="btn-success" data-i18n="encryptAddContactBtn">🔒 Encrypt & Add Contact</button>
+  </div>
+</div>
+
+<!-- CAPSULE FOLDER MODAL -->
+<div id="capsuleFolderModal" class="modal-overlay hidden">
+  <div class="modal-content">
+    <button class="modal-close" onclick="closeModal('capsuleFolderModal')">✕</button>
+    <div class="folder-header">
+      <h3>📅 Upcoming Time Capsules</h3>
+      <button onclick="openScheduleModal()" class="btn-small btn-warning" style="margin:0">➕ Add New</button>
+    </div>
+    <input type="text" class="search-bar" id="capsuleSearch" placeholder="🔍 Search capsules by title..." oninput="filterCapsules()">
+    <div id="capsuleListModal"></div>
+  </div>
+</div>
+
+<!-- NOTIFICATION MODAL -->
+<div id="notificationModal" class="modal-overlay hidden">
+  <div class="modal-content">
+    <button class="modal-close" onclick="closeModal('notificationModal')">✕</button>
+    <h3>🔔 Notifications & Alerts</h3>
+    <div id="notifList"></div>
+    <button onclick="closeModal('notificationModal')" class="btn-secondary" style="margin-top:15px">Close</button>
+  </div>
+</div>
+
+<!-- SCHEDULE MODAL -->
+<div id="scheduleModal" class="modal-overlay hidden">
+  <div class="modal-content">
+    <button class="modal-close" onclick="closeModal('scheduleModal')">✕</button>
+    <h3>📅 Schedule Time Capsule</h3>
+    <label>Recipient Name:</label><input type="text" id="schedRecipient" placeholder="E.g.: My Son Rahul">
+    <label>Message Title:</label><input type="text" id="schedTitle" placeholder="E.g.: 18th Birthday Wish">
+    <label>Unlock Date:</label><input type="date" id="schedDate" min="">
+    <label>Secret Message:</label><textarea id="schedText" placeholder="Write your message here..."></textarea>
+    <button onclick="saveScheduledMessage()" class="btn-success">🔒 Encrypt & Schedule</button>
+    <button onclick="closeModal('scheduleModal')" class="btn-secondary" style="margin-top:10px;background:transparent;border:1px solid var(--border)">Cancel</button>
+    <div id="schedStatus" class="status" style="display:none"></div>
+  </div>
+</div>
+
+<!-- FORGOT PASSWORD MODAL -->
+<div id="forgotPasswordModal" class="modal-overlay hidden">
+  <div class="modal-content">
+    <button class="modal-close" onclick="closeModal('forgotPasswordModal')">✕</button>
+    <h3>🔑 Reset Password</h3>
+    <div class="warning-box">⚠️ <strong>Important:</strong> Due to End-to-End Encryption, you MUST provide your Recovery Key to access old data after reset.</div>
+    <label>Your Email:</label><input type="email" id="forgotEmail" placeholder="your@email.com">
+    <label>Recovery Key:</label><input type="text" id="forgotRecoveryKey" placeholder="Enter your 32-character recovery key">
+    <button onclick="sendResetLink()" class="btn-success">📧 Send Reset Link</button>
+    <button onclick="closeModal('forgotPasswordModal')" class="btn-secondary" style="margin-top:10px;background:transparent;border:1px solid var(--border)">Cancel</button>
+    <div id="forgotStatus" class="status" style="display:none"></div>
+  </div>
+</div>
+
+<!-- UPGRADE MODAL (Inline JS) -->
+<div id="upgradeModal" class="modal-overlay hidden">
+  <div class="modal-content" style="text-align:center;">
+    <button class="modal-close" onclick="closeModal('upgradeModal')">✕</button>
+    <div style="font-size:70px; margin-bottom:10px;">👑</div>
+    <h3 style="color:var(--accent); text-align:center;">Upgrade to Yaadgaar Premium</h3>
+    <p style="color:var(--muted); font-size:14px; margin:10px 0;">Unlock the full power of your digital legacy vault</p>
+    <ul class="premium-benefits">
+      <li>Unlimited Memories (No 30 limit)</li>
+      <li>Unlimited Photos & Audio Notes</li>
+      <li>Unlimited Trusted Contacts</li>
+      <li>Unlimited Time Capsules</li>
+      <li>🎥 Video Message Recording</li>
+      <li>📱 SMS & WhatsApp Alerts</li>
+      <li>⚡ Priority Support</li>
+    </ul>
+    
+    <div style="display: flex; gap: 10px; margin-top: 20px;">
+      <button class="upgrade-btn-yearly" onclick="alert('🎉 ₹99/Year plan selected! Payment gateway coming soon.'); document.getElementById('upgradeModal').classList.add('hidden');">⚡ ₹99 / Year</button>
+      <button class="upgrade-btn-lifetime" onclick="alert('🎉 ₹299/Lifetime plan selected! Payment gateway coming soon.'); document.getElementById('upgradeModal').classList.add('hidden');">👑 ₹299 / Lifetime</button>
+    </div>
+    
+    <button onclick="closeModal('upgradeModal')" class="btn-secondary" style="margin-top:10px;background:transparent;border:1px solid var(--border)">Maybe Later</button>
+  </div>
+</div>
+
+<!-- DELETE ACCOUNT MODAL -->
+<div id="deleteAccountModal" class="modal-overlay hidden">
+  <div class="modal-content">
+    <button class="modal-close" onclick="closeModal('deleteAccountModal')">✕</button>
+    <h3 style="color:#e74c3c">🗑️ Delete My Account</h3>
+    <div class="warning-box">⚠️ <strong>Permanent Action!</strong> This cannot be undone.</div>
+    <div id="deleteListContainer" class="delete-list">
+      <p style="text-align:center;color:var(--muted)">Calculating data...</p>
+    </div>
+    <label>Confirm your password:</label>
+    <input type="password" id="deletePasswordInput" placeholder="Enter password">
+    <button id="deleteConfirmBtn" onclick="executeHardDelete()" class="btn-danger">🔥 Delete Everything</button>
+    <button onclick="closeModal('deleteAccountModal')" class="btn-secondary" style="margin-top:10px">Cancel</button>
+    <div id="deleteStatus" class="status" style="display:none"></div>
+  </div>
+</div>
+
+<!-- 🔥 SMART LOCK OVERLAY (100% FIXED - NO DUAL INPUTS, NO STUCK STATUS) -->
+<div id="lockOverlay" class="hidden" style="position:fixed;inset:0;background:linear-gradient(135deg,#0d0d1a 0%,#16213e 100%);z-index:2000;display:none;align-items:center;justify-content:center;padding:20px">
+  <div style="max-width:380px;width:100%;text-align:center">
+    <span style="font-size:70px;display:block;margin-bottom:15px">🔒</span>
+    <h2 style="color:var(--accent);margin-bottom:10px">Vault Locked</h2>
+    
+    <!-- Password Input (Visible by default) -->
+    <div id="unlockPasswordContainer" style="display:block;">
+      <input type="password" id="unlockPassword" placeholder="Your password" style="margin-bottom:10px;">
+    </div>
+    
+    <!-- PIN Input (Hidden by default) -->
+    <div id="unlockPinContainer" style="display:none;">
+      <input type="password" id="unlockPin" maxlength="4" pattern="[0-9]*" inputmode="numeric" placeholder="Enter 4-digit PIN" style="font-size:24px; text-align:center; letter-spacing:10px; margin-bottom:10px;">
+    </div>
+    
+    <button onclick="handleUnlock()" style="margin-top:10px;">🔓 Unlock Vault</button>
+    <div id="unlockToggle" class="forgot-link" onclick="toggleUnlockMethod()" style="margin-top:15px; font-size:13px; cursor:pointer;">Use PIN Instead</div>
+    <div id="unlockStatus" class="status" style="display:none"></div>
+  </div>
+</div>
+
+<!-- RECOVERY MODAL -->
+<div id="recoveryModal" class="modal-overlay hidden">
+  <div class="modal-content">
+    <button class="modal-close" onclick="closeModal('recoveryModal')">✕</button>
+    <h3>🔑 Recovery Key</h3>
+    <div class="danger-box">⚠️ Write this key on paper and keep it safe! Without it, your data cannot be recovered.</div>
+    <div id="recoveryKeyDisplay" style="background:rgba(243,156,18,0.15);border:2px dashed var(--accent);padding:15px;border-radius:10px;margin:15px 0;word-break:break-all;font-family:monospace;font-size:14px;color:var(--accent)">Loading...</div>
+    <button onclick="copyRecoveryKey()" class="btn-secondary">📋 Copy Key</button>
+    <div id="recoveryStatus" class="status" style="display:none"></div>
+  </div>
+</div>
+
+<!-- PRIVACY POLICY MODAL -->
+<div id="privacyModal" class="modal-overlay hidden">
+  <div class="modal-content">
+    <button class="modal-close" onclick="closeModal('privacyModal')">✕</button>
+    <h3>📜 Privacy Policy</h3>
+    <div style="font-size:12px; color:var(--muted); margin-bottom:15px;">Last Updated: November 2026</div>
+    <p>At <strong>Yaadgaar</strong>, we take your privacy and the security of your digital legacy extremely seriously. This Privacy Policy explains what information we collect, how we use it, and how we protect it.</p>
+    <h4 style="color:var(--accent); margin-top:18px;">1. Information We Collect</h4>
+    <ul style="margin-left:18px; font-size:13px; line-height:1.7;">
+      <li><strong>Account Information:</strong> Your email address to create and identify your secure account.</li>
+      <li><strong>Encrypted Content:</strong> Messages, photos, voice notes, and trusted contact details. All content is <strong>End-to-End Encrypted (E2EE)</strong> on your device. We never have access to your encryption key.</li>
+      <li><strong>Usage Data:</strong> Your last login timestamp and chosen inactivity period for the Dead Man's Switch feature.</li>
+      <li><strong>Device Information:</strong> Basic technical info (browser type, OS) for security and troubleshooting.</li>
+      <li><strong>Local Device Data:</strong> Your encrypted PIN verifier and app preferences are stored locally on your device only.</li>
+    </ul>
+    <h4 style="color:var(--accent); margin-top:18px;">2. How We Use Your Data</h4>
+    <p>Your data is used exclusively to create your account, store and sync your encrypted memories, execute the Dead Man's Switch protocol, and send essential service communications.</p>
+    <h4 style="color:var(--accent); margin-top:18px;">3. Data Security & Encryption</h4>
+    <p>We use industry-standard <strong>AES-256-GCM encryption</strong>. Your encryption key is derived from your password using <strong>PBKDF2 with 100,000 iterations</strong> entirely on your device. Because we never receive your password or key, we cannot decrypt your data.</p>
+    <h4 style="color:var(--accent); margin-top:18px;">4. Third-Party Service Providers</h4>
+    <p>We use <strong>Supabase</strong> to store encrypted data and manage authentication. We do not sell, share, or use your data for advertising.</p>
+    <h4 style="color:var(--accent); margin-top:18px;">5. Data Retention & Deletion</h4>
+    <p>We retain your encrypted data as long as your account is active. You can permanently delete your account and all data anytime via Settings. Deletion is irreversible.</p>
+    <h4 style="color:var(--accent); margin-top:18px;">6. Children's Privacy</h4>
+    <p>Yaadgaar is intended for users aged 18 and above. We do not knowingly collect data from children under 13.</p>
+    <h4 style="color:var(--accent); margin-top:18px;">7. Permissions We Request</h4>
+    <ul style="margin-left:18px; font-size:13px; line-height:1.7;">
+      <li><strong>Microphone:</strong> Only when recording voice notes.</li>
+      <li><strong>Camera / Storage:</strong> Only when attaching photos or documents.</li>
+      <li><strong>Internet:</strong> To sync encrypted data securely.</li>
+    </ul>
+    <h4 style="color:var(--accent); margin-top:18px;">8. Contact Us</h4>
+    <p>For privacy questions, contact us at: <strong>support@yaadgaar.app</strong></p>
+  </div>
+</div>
+
+<!-- TERMS & CONDITIONS MODAL -->
+<div id="termsModal" class="modal-overlay hidden">
+  <div class="modal-content">
+    <button class="modal-close" onclick="closeModal('termsModal')">✕</button>
+    <h3>📄 Terms & Conditions</h3>
+    <div style="font-size:12px; color:var(--muted); margin-bottom:15px;">Last Updated: November 2026</div>
+    <p>Welcome to <strong>Yaadgaar</strong>. By using our app, you agree to these Terms.</p>
+    <h4 style="color:var(--accent); margin-top:18px;">1. Acceptance & Eligibility</h4>
+    <p>You must be at least 18 years old to use Yaadgaar. By using the app, you agree to be bound by these Terms.</p>
+    <h4 style="color:var(--accent); margin-top:18px;">2. Your Account & Encryption Responsibility</h4>
+    <p>Yaadgaar uses End-to-End Encryption. Your password is your only key. If you lose your password and Recovery Key, your data is permanently unrecoverable. You are solely responsible for safeguarding your credentials.</p>
+    <h4 style="color:var(--accent); margin-top:18px;">3. Acceptable Use</h4>
+    <p>You agree not to use Yaadgaar to store illegal content, distribute malware, attempt to reverse-engineer the app, or engage in fraudulent activities.</p>
+    <h4 style="color:var(--accent); margin-top:18px;">4. Free Plan & Premium</h4>
+    <p>Free plan limits: 30 memories, 10 photos, 10 audio notes, 10 contacts. Premium features (₹99/year or ₹299/lifetime) offer unlimited storage and advanced alerts.</p>
+    <h4 style="color:var(--accent); margin-top:18px;">5. Dead Man's Switch Disclaimer</h4>
+    <p>This feature is a convenience tool, not a legal or emergency service. It relies on login activity and internet connectivity. You are responsible for enabling Vacation Mode to prevent false triggers. We accept no liability for missed or false notifications.</p>
+    <h4 style="color:var(--accent); margin-top:18px;">6. Not a Legal Will</h4>
+    <p>Yaadgaar provides templates for personal messages. These are not legally binding documents. Consult a qualified legal professional for a valid will.</p>
+    <h4 style="color:var(--accent); margin-top:18px;">7. Limitation of Liability</h4>
+    <p>Yaadgaar is provided "AS IS". We are not liable for data loss due to forgotten passwords, device compromise, server outages, or failure of the Dead Man's Switch.</p>
+    <h4 style="color:var(--accent); margin-top:18px;">8. Termination & Governing Law</h4>
+    <p>You may delete your account anytime. We reserve the right to terminate accounts violating these Terms. These Terms are governed by the laws of India.</p>
+    <h4 style="color:var(--accent); margin-top:18px;">9. Contact Us</h4>
+    <p>For any questions, contact: <strong>support@yaadgaar.app</strong></p>
+  </div>
+</div>
+
+<!-- FEEDBACK MODAL -->
+<div id="feedbackModal" class="modal-overlay hidden">
+  <div class="modal-content">
+    <button class="modal-close" onclick="closeModal('feedbackModal')">✕</button>
+    <h3>💬 Send Feedback</h3>
+    <textarea id="feedbackText" placeholder="Write your feedback here..." style="min-height:150px"></textarea>
+    <button onclick="submitFeedback()" class="btn-success">📤 Send Feedback</button>
+    <div id="feedbackStatus" class="status" style="display:none"></div>
+  </div>
+</div>
+<script>
+// ==========================================
+// 🔥 FULL TRANSLATIONS (English & Hindi)
+// ==========================================
+const translations = {
+  en: {
+    loginTitle: "🔐 Login", loginBtn: "🔓 Login", signupToggle: "Create new account (Sign Up)",
+    vaultOverview: "🏠 Your Vault Overview", memoriesLabel: "📝 Memories", capsulesLabel: "📅 Capsules", contactsLabel: "👥 Contacts", daysLabel: "📅 Days Active",
+    encryptedInfo: '🔒 <strong>Fully End-to-End Encrypted:</strong> Your files, messages and trusted contacts are all locked on your device.',
+    yourMemories: "📚 Your Memories", addNewBtn: "➕ Add New", searchMemories: "🔍 Search memories...",
+    yourContacts: "📋 Your Trusted Contacts", searchContacts: "🔍 Search contacts...",
+    settingsBtn: "⚙️ Settings & Preferences", recoveryBtn: "🔑 Recovery Key", pinBtn: "🔢 Set / Change 4-Digit PIN", upgradeBtn: "👑 Upgrade to Premium", logoutBtn: "🚪 Logout", deleteBtn: "🗑️ Delete My Account Permanently",
+    enterPinTitle: "🔢 Enter Your PIN", unlockVaultBtn: "Unlock Vault", setPinTitle: "🔢 Set 4-Digit PIN", newPinLabel: "New 4-Digit PIN:", confirmPassLabel: "Confirm Your Account Password:",
+    savePinBtn: "💾 Save PIN", removePinBtn: "🗑️ Remove Existing PIN", addMemoryTitle: "📝 Add New Memory", titleLabel: "Title:", messageLabel: "Message:",
+    addContactTitle: "👥 Add Trusted Contact", contactNameLabel: "Contact Name:", contactEmailLabel: "Email:", emergencyPassLabel: "Emergency Password:",
+    encryptAddContactBtn: "🔒 Encrypt & Add Contact",
+    settingsTitle: "⚙️ Settings",
+    navHome: "Home", navMemories: "Memories", navContacts: "Contacts", navProfile: "Profile"
+  },
+  hi: {
+    loginTitle: "🔐 लॉगिन", loginBtn: "🔓 लॉगिन करें", signupToggle: "नया खाता बनाएं (साइन अप)",
+    vaultOverview: "🏠 आपका वॉल्ट अवलोकन", memoriesLabel: "📝 यादें", capsulesLabel: "📅 कैप्सूल", contactsLabel: "👥 संपर्क", daysLabel: "📅 सक्रिय दिन",
+    encryptedInfo: '🔒 <strong>पूर्णतः एंड-टू-एंड एन्क्रिप्टेड:</strong> आपकी फाइलें, संदेश और विश्वसनीय संपर्क आपके डिवाइस पर लॉक हैं।',
+    yourMemories: "📚 आपकी यादें", addNewBtn: "➕ नया जोड़ें", searchMemories: "🔍 यादें खोजें...",
+    yourContacts: "📋 आपके विश्वसनीय संपर्क", searchContacts: "🔍 संपर्क खोजें...",
+    settingsBtn: "⚙️ सेटिंग्स और प्राथमिकताएं", recoveryBtn: "🔑 रिकवरी की", pinBtn: "🔢 4-अंकों का PIN सेट/बदलें", upgradeBtn: "👑 प्रीमियम में अपग्रेड करें", logoutBtn: "🚪 लॉगआउट", deleteBtn: "🗑️ मेरा खाता स्थायी रूप से हटाएं",
+    enterPinTitle: "🔢 अपना PIN दर्ज करें", unlockVaultBtn: "वॉल्ट अनलॉक करें", setPinTitle: "🔢 4-अंकों का PIN सेट करें", newPinLabel: "नया 4-अंकों का PIN:", confirmPassLabel: "अपना पासवर्ड पुष्टि करें:",
+    savePinBtn: "💾 PIN सेव करें", removePinBtn: "🗑️ मौजूदा PIN हटाएं", addMemoryTitle: "📝 नई याद जोड़ें", titleLabel: "शीर्षक:", messageLabel: "संदेश:",
+    addContactTitle: "👥 विश्वसनीय संपर्क जोड़ें", contactNameLabel: "संपर्क नाम:", contactEmailLabel: "ईमेल:", emergencyPassLabel: "आपातकालीन पासवर्ड:",
+    encryptAddContactBtn: "🔒 एन्क्रिप्ट करें और संपर्क जोड़ें",
+    settingsTitle: "⚙️ सेटिंग्स",
+    navHome: "होम", navMemories: "यादें", navContacts: "संपर्क", navProfile: "प्रोफाइल"
+  }
+};
+
+function changeLanguage(lang) {
+  const t = translations[lang] || translations.en;
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const key = el.getAttribute('data-i18n');
+    if (t[key]) { 
+      if (key === 'encryptedInfo') el.innerHTML = t[key]; 
+      else el.textContent = t[key]; 
+    }
+  });
+  document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+    const key = el.getAttribute('data-i18n-placeholder');
+    if (t[key]) el.placeholder = t[key];
+  });
+  localStorage.setItem('yaadgaar_lang', lang);
+}
+
+function loadSavedLanguage() {
+  const savedLang = localStorage.getItem('yaadgaar_lang') || 'en';
+  const select = document.getElementById('languageSelect');
+  if (select) select.value = savedLang;
+  changeLanguage(savedLang);
+}
+
+// ==========================================
+// STATE & CONFIG
+// ==========================================
+var currentUser=null, isSignup=false, selectedPhoto=null, selectedAudio=null, supabase=null, encryptionKey=null, recoveryKey=null;
+var isListening=false, recognition=null, DMS_DAYS=30, mediaRecorder=null, audioChunks=[], isRecording=false, recTimerInt=null, recSeconds=0;
+var allMemories=[], allContacts=[], allCapsules=[];
+var LIMITS={memories:30, photos:10, audio:10, contacts:10, capsules:30};
+var SUPABASE_URL='https://sgvtwsqtuoycmomaiyvp.supabase.co', SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNndnR3c3F0dW95Y21vbWFpeXZwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTQ4NDQ3OTgsImV4cCI6MjExMDQyMDc5OH0.H-xfwSZQ-8JKd0LyftHV9Yy27uP0IxbUIbE-hTZQTf4';
+
+// ==========================================
+// UTILS & ENCRYPTION
+// ==========================================
+function togglePassword(id, btn){const inp=document.getElementById(id);if(inp.type==='password'){inp.type='text';btn.textContent='🙈';}else{inp.type='password';btn.textContent='👁️';}}
+function testVoice(){alert('🔊 Audio test successful!');}
+async function getPhotoCount(){if(!supabase||!currentUser)return 0;try{const{data}=await supabase.from('memories').select('image_url').eq('user_id',currentUser.id);return data?data.filter(m=>m.image_url).length:0;}catch(e){return 0;}}
+async function getAudioCount(){if(!supabase||!currentUser)return 0;try{const{data}=await supabase.from('memories').select('file_type').eq('user_id',currentUser.id);return data?data.filter(m=>m.file_type==='audio'||m.file_type==='photo_audio').length:0;}catch(e){return 0;}}
+async function updatePhotoCounter(){const c=await getPhotoCount();const el=document.getElementById('photoCounter');if(el){el.textContent=c+'/'+LIMITS.photos;el.style.color=c>=LIMITS.photos?'#e74c3c':'var(--accent)';}}
+async function updateAudioCounter(){const c=await getAudioCount();const el=document.getElementById('audioCounter');if(el){el.textContent=c+'/'+LIMITS.audio;el.style.color=c>=LIMITS.audio?'#e74c3c':'var(--accent)';}}
+
+function goToSlide(i){const totalSlides=3;if(i<0||i>=totalSlides)return;document.getElementById('onboardTrack').style.transform='translateX(-'+(i*33.333)+'%)';var d=document.querySelectorAll('.onb-dot');d.forEach((x,j)=>x.classList.toggle('active',j===i));document.getElementById('slideCounter').textContent=(i+1)+' / '+totalSlides;document.getElementById('onbBackBtn').style.display=i===0?'none':'inline-block';var n=document.getElementById('onbNextBtn');if(i===totalSlides-1){n.style.display='none';}else{n.style.display='inline-block';n.textContent='Next →';}}
+function nextSlide(){const currentSlide=parseInt(document.getElementById('slideCounter').textContent.split(' / ')[0])-1;if(currentSlide<2)goToSlide(currentSlide+1);}
+function prevSlide(){const currentSlide=parseInt(document.getElementById('slideCounter').textContent.split(' / ')[0])-1;if(currentSlide>0)goToSlide(currentSlide-1);}
+function completeOnboarding(){localStorage.setItem('yaadgaar_onboarded','true');document.getElementById('onboardingScreen').classList.add('hidden');document.getElementById('authScreen').classList.remove('hidden');}
+
+function generateRecoveryKey(){const c='ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';let k='';const a=new Uint8Array(32);window.crypto.getRandomValues(a);for(let i=0;i<32;i++){k+=c[a[i]%c.length];if((i+1)%8===0&&i<31)k+='-';}return k;}
+async function deriveKey(p){const e=new TextEncoder();const m=await window.crypto.subtle.importKey("raw",e.encode(p),{name:"PBKDF2"},false,["deriveBits","deriveKey"]);return window.crypto.subtle.deriveKey({name:"PBKDF2",salt:e.encode("yaadgaar-e2e-salt-2024"),iterations:100000,hash:"SHA-256"},m,{name:"AES-GCM",length:256},false,["encrypt","decrypt"]);}
+async function encryptText(t,k){const e=new TextEncoder();const iv=window.crypto.getRandomValues(new Uint8Array(12));const en=await window.crypto.subtle.encrypt({name:"AES-GCM",iv:iv},k,e.encode(t));return{encryptedData:Array.from(new Uint8Array(en)),iv:Array.from(iv)};}
+async function decryptText(ea,ia,k){const iv=new Uint8Array(ia);const ed=new Uint8Array(ea);const d=await window.crypto.subtle.decrypt({name:"AES-GCM",iv:iv},k,ed);return new TextDecoder().decode(d);}
+async function encryptFile(f,k){const b=await f.arrayBuffer();const iv=window.crypto.getRandomValues(new Uint8Array(12));const en=await window.crypto.subtle.encrypt({name:"AES-GCM",iv:iv},k,b);return{encryptedData:en,iv:Array.from(iv)};}
+async function decryptFile(eb,ia,k){const iv=new Uint8Array(ia);const d=await window.crypto.subtle.decrypt({name:"AES-GCM",iv:iv},k,eb);return new Blob([d]);}
+
+// ==========================================
+// PIN LOGIN & SECURITY
+// ==========================================
+function checkLoginMethod() {
+  const hasPin = localStorage.getItem('yaadgaar_pin_verifier');
+  const emailInput = document.getElementById('authEmail');
+  const passInput = document.getElementById('authPassword');
+  const loginBtn = document.getElementById('authBtn');
+  const signupBtn = document.getElementById('authToggleText');
+  const forgotBtn = document.querySelector('.forgot-link');
+  const pinContainer = document.getElementById('pinLoginBtnContainer');
+
+  if (hasPin) {
+    emailInput.parentElement.style.display = 'none';
+    passInput.parentElement.style.display = 'none';
+    loginBtn.style.display = 'none';
+    signupBtn.style.display = 'none';
+    if(forgotBtn) forgotBtn.style.display = 'none';
+    pinContainer.style.display = 'block';
+    setTimeout(() => { openPinLoginModal(); }, 300);
+  } else {
+    emailInput.parentElement.style.display = 'block';
+    passInput.parentElement.style.display = 'block';
+    loginBtn.style.display = 'block';
+    signupBtn.style.display = 'block';
+    if(forgotBtn) forgotBtn.style.display = 'block';
+    pinContainer.style.display = 'none';
+  }
+}
+
+function openPinLoginModal() {
+  document.getElementById('pinLoginModal').classList.remove('hidden');
+  document.getElementById('pinLoginModal').style.display = '';
+  document.getElementById('pinInput').value = '';
+  document.getElementById('pinLoginStatus').style.display = 'none';
+  setTimeout(() => document.getElementById('pinInput').focus(), 100);
+}
+
+function closePinAndShowLogin() {
+  closeModal('pinLoginModal');
+  document.getElementById('authEmail').parentElement.style.display = 'block';
+  document.getElementById('authPassword').parentElement.style.display = 'block';
+  document.getElementById('authBtn').style.display = 'block';
+  document.getElementById('authToggleText').style.display = 'block';
+  const forgotBtn = document.querySelector('.forgot-link');
+  if (forgotBtn) forgotBtn.style.display = 'block';
+}
+
+async function handlePinLogin() {
+  const pin = document.getElementById('pinInput').value;
+  const status = document.getElementById('pinLoginStatus');
+  if (pin.length !== 4 || !/^\d+$/.test(pin)) { status.textContent = '❌ PIN must be exactly 4 digits.'; status.className = 'status warning'; status.style.display = 'block'; return; }
+  status.textContent = '⏳ Verifying PIN...'; status.className = 'status info'; status.style.display = 'block';
+  try {
+    const pinKey = await deriveKey(pin);
+    const storedVerifier = JSON.parse(localStorage.getItem('yaadgaar_pin_verifier'));
+    if (!storedVerifier) throw new Error('No PIN set');
+    const check = await decryptText(storedVerifier.encryptedData, storedVerifier.iv, pinKey);
+    if (check !== 'yaadgaar-pin-ok') throw new Error('Wrong PIN');
+    const storedPass = JSON.parse(localStorage.getItem('yaadgaar_pin_encrypted_pass'));
+    const password = await decryptText(storedPass.encryptedData, storedPass.iv, pinKey);
+    const storedEmail = localStorage.getItem('yaadgaar_pin_email');
+    if (!storedEmail) throw new Error('Email not found.');
+    document.getElementById('authEmail').value = storedEmail;
+    document.getElementById('authPassword').value = password;
+    status.textContent = '✅ PIN Verified! Logging in...'; status.className = 'status success';
+    setTimeout(() => { closeModal('pinLoginModal'); handleAuth(); }, 500);
+  } catch (e) { status.textContent = '❌ ' + (e.message || 'Incorrect PIN.'); status.className = 'status warning'; }
+}
+
+function openSetPinModal() {
+  document.getElementById('setPinModal').classList.remove('hidden');
+  document.getElementById('setPinModal').style.display = '';
+  document.getElementById('newPinInput').value = '';
+  document.getElementById('pinPasswordInput').value = '';
+  document.getElementById('setPinStatus').style.display = 'none';
+}
+
+async function saveNewPin() {
+  const pin = document.getElementById('newPinInput').value;
+  const pass = document.getElementById('pinPasswordInput').value;
+  const status = document.getElementById('setPinStatus');
+  if (pin.length !== 4 || !/^\d+$/.test(pin)) { status.textContent = '❌ PIN must be exactly 4 digits.'; status.className = 'status warning'; status.style.display = 'block'; return; }
+  if (!pass || !currentUser) { status.textContent = '❌ Please enter your password.'; status.className = 'status warning'; status.style.display = 'block'; return; }
+  
+  status.textContent = '⏳ Verifying Password...'; status.className = 'status info'; status.style.display = 'block';
+  try {
+    const { error } = await supabase.auth.signInWithPassword({ email: currentUser.email, password: pass });
+    if (error) throw new Error('Wrong Password');
+    
+    status.textContent = '⏳ Securing PIN...';
+    const pinKey = await deriveKey(pin);
+    const verifier = await encryptText('yaadgaar-pin-ok', pinKey);
+    const encPass = await encryptText(pass, pinKey);
+    localStorage.setItem('yaadgaar_pin_verifier', JSON.stringify(verifier));
+    localStorage.setItem('yaadgaar_pin_encrypted_pass', JSON.stringify(encPass));
+    localStorage.setItem('yaadgaar_pin_email', currentUser.email);
+    status.textContent = '✅ PIN set successfully!'; status.className = 'status success';
+    setTimeout(() => { closeModal('setPinModal'); checkLoginMethod(); }, 2000);
+  } catch (e) {
+    status.textContent = '❌ ' + (e.message === 'Wrong Password' ? 'Incorrect Password!' : 'Error setting PIN.');
+    status.className = 'status warning';
+  }
+}
+
+function removePin() {
+  localStorage.removeItem('yaadgaar_pin_verifier');
+  localStorage.removeItem('yaadgaar_pin_encrypted_pass');
+  localStorage.removeItem('yaadgaar_pin_email');
+  const status = document.getElementById('setPinStatus');
+  status.textContent = '✅ PIN removed.'; status.className = 'status success'; status.style.display = 'block';
+  setTimeout(() => { closeModal('setPinModal'); checkLoginMethod(); }, 1500);
+}
+
+// ==========================================
+// PROFILE PHOTO (LOCAL STORAGE ONLY)
+// ==========================================
+function uploadProfilePhoto(input) {
+  const file = input.files[0];
+  if (!file) return;
+  if (!currentUser) { alert('❌ Please login first!'); return; }
+  if (file.size > 1.5 * 1024 * 1024) { alert('⚠️ Photo 1.5MB se chhoti honi chahiye!'); input.value = ''; return; }
+
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      localStorage.setItem('yaadgaar_profile_pic_' + currentUser.id, e.target.result);
+      document.getElementById('profileAvatarImg').src = e.target.result;
+      document.getElementById('profileAvatarImg').style.display = 'block';
+      document.getElementById('profileAvatarText').style.display = 'none';
+      alert('✅ Profile photo saved on your device!');
+    } catch (err) { alert('❌ Storage full!'); }
+  };
+  reader.readAsDataURL(file);
+  input.value = ''; 
+}
+
+function loadProfilePhoto() {
+  if (!currentUser) return;
+  const base64 = localStorage.getItem('yaadgaar_profile_pic_' + currentUser.id);
+  if (base64) {
+    document.getElementById('profileAvatarImg').src = base64;
+    document.getElementById('profileAvatarImg').style.display = 'block';
+    document.getElementById('profileAvatarText').style.display = 'none';
+  } else {
+    document.getElementById('profileAvatarImg').style.display = 'none';
+    document.getElementById('profileAvatarText').style.display = 'block';
+    document.getElementById('profileAvatarText').textContent = currentUser.email.charAt(0).toUpperCase();
+  }
+}
+// ==========================================
+// SUPABASE INIT & UI TOGGLES
+// ==========================================
+function loadSupabaseScript(){return new Promise(function(r,j){if(window.supabase){r();return;}var s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2';s.onload=function(){if(window.supabase)r();else j();};s.onerror=function(){j();};document.head.appendChild(s);});}
+async function initSupabase(){if(supabase)return supabase;try{await loadSupabaseScript();supabase=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);return supabase;}catch(e){return null;}}
+function toggleTheme(){document.body.classList.toggle('light');}
+function toggleAuthMode(){isSignup=!isSignup;document.getElementById('authTitle').textContent=isSignup?'📝 Create New Account':'🔐 Login';document.getElementById('authBtn').textContent=isSignup?'✅ Sign Up':'🔓 Login';document.getElementById('authToggleText').textContent=isSignup?'Already have an account? Login':'Create new account (Sign Up)';document.getElementById('authStatus').style.display='none';document.getElementById('termsContainer').classList.toggle('hidden', !isSignup);}
+function openModal(id){var m=document.getElementById(id);m.classList.remove('hidden');m.style.display='';if(id==='recoveryModal')showRecoveryKey();if(id==='capsuleFolderModal'){loadCapsuleFolder();allCapsules=[];}if(id==='notificationModal')loadNotifications();if(id==='settingsModal')loadSettingsData();}
+function closeModal(id){var m=document.getElementById(id);m.classList.add('hidden');if(id==='feedbackModal'){document.getElementById('feedbackStatus').style.display='none';document.getElementById('feedbackText').value='';}if(id==='recoveryModal'){document.getElementById('recoveryStatus').style.display='none';}if(id==='scheduleModal'){document.getElementById('schedStatus').style.display='none';}if(id==='forgotPasswordModal'){document.getElementById('forgotStatus').style.display='none';}}
+function openUpgradeModal() { var m = document.getElementById('upgradeModal'); m.classList.remove('hidden'); m.style.display = ''; }
+
+// ==========================================
+// AUTH & SESSION
+// ==========================================
+async function handleAuth(){var e=document.getElementById('authEmail').value.trim();var p=document.getElementById('authPassword').value;var s=document.getElementById('authStatus');if(!e||!p){s.textContent='❌ Please enter both email and password!';s.className='status warning';s.style.display='block';return;}
+if(isSignup && !document.getElementById('agreeTerms').checked){s.textContent='❌ Please agree to Terms & Conditions.';s.className='status warning';s.style.display='block';return;}
+s.textContent='⏳ Deriving Encryption Key...';s.className='status info';s.style.display='block';try{encryptionKey=await deriveKey(p);}catch(x){s.textContent='❌ Encryption setup failed.';s.className='status warning';return;}
+s.textContent='⏳ Connecting to Cloud...';var c=await initSupabase();if(!c){s.textContent='❌ Internet issue.';s.className='status warning';return;}
+try{if(isSignup){var r=await c.auth.signUp({email:e,password:p});if(r.error){s.textContent='❌ '+r.error.message;s.className='status warning';}else{recoveryKey=generateRecoveryKey();localStorage.setItem('yaadgaar_recovery_'+e,recoveryKey);s.innerHTML='✅ Account created! 📧 Check your email.<br><br><strong style="color:#f39c12">🔑 Recovery Key: '+recoveryKey+'</strong><br><small>Save this key!</small>';s.className='status success';}}
+else{var r=await c.auth.signInWithPassword({email:e,password:p});if(r.error){s.textContent='❌ '+r.error.message;s.className='status warning';}else{currentUser=r.data.user;recoveryKey=localStorage.getItem('yaadgaar_recovery_'+e);var sd=localStorage.getItem('yaadgaar_dms_'+currentUser.email);if(sd)DMS_DAYS=parseInt(sd);try{const v=await encryptText('yaadgaar-verify',encryptionKey);localStorage.setItem('yaadgaar_verifier_'+e,JSON.stringify(v));}catch(x){}await updateLastLogin();document.getElementById('authScreen').classList.add('hidden');document.getElementById('dashboard').classList.remove('hidden');document.getElementById('bottomNav').classList.remove('hidden');document.getElementById('lockBtn').classList.remove('hidden');document.getElementById('bellBtn').classList.remove('hidden');document.getElementById('userNameDisplay').textContent=currentUser.email.split('@')[0];s.style.display='none';loadSavedLanguage();switchTab('home');loadAllData();}}}catch(x){s.textContent='❌ Error: '+x.message;s.className='status warning';}}
+
+async function updateLastLogin(){if(!currentUser||!supabase)return;try{await supabase.from('profiles').upsert({user_id:currentUser.id,last_login_at:new Date().toISOString(),dms_days:DMS_DAYS},{onConflict:'user_id'});}catch(e){}}
+function showRecoveryKey(){const d=document.getElementById('recoveryKeyDisplay');if(!recoveryKey){recoveryKey=localStorage.getItem('yaadgaar_recovery_'+(currentUser?currentUser.email:''));}if(recoveryKey){d.textContent=recoveryKey;}else{d.textContent='⚠️ Recovery key not found.';}}
+function copyRecoveryKey(){if(!recoveryKey){alert('❌ Recovery key not found!');return;}navigator.clipboard.writeText(recoveryKey).then(()=>{const s=document.getElementById('recoveryStatus');s.textContent='✅ Key copied!';s.className='status success';s.style.display='block';}).catch(()=>{alert('Copy failed.');});}
+
+async function handleLogout(){
+    if(supabase) await supabase.auth.signOut({scope:'global'});
+    currentUser=null; encryptionKey=null; recoveryKey=null;
+    document.getElementById('lockBtn').classList.add('hidden');
+    document.getElementById('bellBtn').classList.add('hidden');
+    const overlay = document.getElementById('lockOverlay');
+    overlay.classList.add('hidden'); overlay.style.display = 'none';
+    document.getElementById('bottomNav').classList.add('hidden');
+    document.getElementById('dashboard').classList.add('hidden');
+    
+    document.getElementById('authEmail').parentElement.style.display = 'block';
+    document.getElementById('authPassword').parentElement.style.display = 'block';
+    document.getElementById('authBtn').style.display = 'block';
+    document.getElementById('authToggleText').style.display = 'block';
+    const forgotBtn = document.querySelector('.forgot-link');
+    if(forgotBtn) forgotBtn.style.display = 'block';
+    document.getElementById('pinLoginBtnContainer').style.display = 'none';
+    document.getElementById('authTitle').textContent = '🔐 Login';
+    document.getElementById('authStatus').style.display = 'none';
+    
+    document.getElementById('authScreen').classList.remove('hidden');
+}
+
+async function checkUser(){document.getElementById('authScreen').classList.add('hidden');document.getElementById('dashboard').classList.add('hidden');
+if(!localStorage.getItem('yaadgaar_onboarded')){document.getElementById('onboardingScreen').classList.remove('hidden');goToSlide(0);return;}
+checkLoginMethod();
+var c=await initSupabase();if(!c){document.getElementById('authScreen').classList.remove('hidden');return;}
+try{var r=await c.auth.getSession();var s=r.data.session;if(s){currentUser=s.user;recoveryKey=localStorage.getItem('yaadgaar_recovery_'+currentUser.email);var sd=localStorage.getItem('yaadgaar_dms_'+currentUser.email);if(sd)DMS_DAYS=parseInt(sd);await updateLastLogin();document.getElementById('authScreen').classList.add('hidden');document.getElementById('dashboard').classList.remove('hidden');document.getElementById('bottomNav').classList.remove('hidden');document.getElementById('lockBtn').classList.remove('hidden');document.getElementById('bellBtn').classList.remove('hidden');document.getElementById('userNameDisplay').textContent=currentUser.email.split('@')[0];loadSavedLanguage();switchTab('home');loadAllData();}else{document.getElementById('authScreen').classList.remove('hidden');}}catch(e){document.getElementById('authScreen').classList.remove('hidden');}}
+
+// ==========================================
+// 🔥 SMART VAULT LOCK/UNLOCK (100% BUG-FREE)
+// ==========================================
+let currentUnlockMethod = 'password';
+
+function lockVault() { 
+    encryptionKey = null; 
+    const overlay = document.getElementById('lockOverlay');
+    overlay.classList.remove('hidden'); 
+    overlay.style.display = 'flex'; // Force flex layout
+    
+    document.getElementById('unlockPassword').value = ''; 
+    document.getElementById('unlockPin').value = ''; 
+    
+    const statusDiv = document.getElementById('unlockStatus');
+    statusDiv.style.display = 'none';
+    statusDiv.textContent = '';
+    
+    currentUnlockMethod = localStorage.getItem('yaadgaar_pin_verifier') ? 'pin' : 'password'; 
+    updateUnlockUI(); 
+}
+
+function toggleUnlockMethod() { 
+    currentUnlockMethod = currentUnlockMethod === 'password' ? 'pin' : 'password'; 
+    updateUnlockUI(); 
+}
+
+function updateUnlockUI() { 
+    const passContainer = document.getElementById('unlockPasswordContainer'); 
+    const pinContainer = document.getElementById('unlockPinContainer'); 
+    const toggleLink = document.getElementById('unlockToggle');
+    const statusDiv = document.getElementById('unlockStatus');
+    
+    // Clear status message immediately
+    if(statusDiv) { statusDiv.style.display = 'none'; statusDiv.textContent = ''; }
+    
+    if (currentUnlockMethod === 'pin') { 
+        passContainer.style.display = 'none'; 
+        pinContainer.style.display = 'block'; 
+        toggleLink.textContent = 'Use Password Instead'; 
+        document.getElementById('unlockPin').value = '';
+        setTimeout(() => document.getElementById('unlockPin').focus(), 100); 
+    } else { 
+        passContainer.style.display = 'block'; 
+        pinContainer.style.display = 'none'; 
+        toggleLink.textContent = 'Use PIN Instead';
+        document.getElementById('unlockPassword').value = '';
+        setTimeout(() => document.getElementById('unlockPassword').focus(), 100); 
+    } 
+}
+
+async function handleUnlock() { 
+    const status = document.getElementById('unlockStatus'); 
+    status.style.display = 'block';
+    
+    if (currentUnlockMethod === 'pin') { 
+        const pin = document.getElementById('unlockPin').value; 
+        if (pin.length !== 4 || !/^\d+$/.test(pin)) { 
+            status.textContent = '❌ PIN must be exactly 4 digits.'; 
+            status.className = 'status warning'; 
+            return; 
+        } 
+        status.textContent = '⏳ Verifying PIN...'; 
+        status.className = 'status info'; 
+        try { 
+            const pinKey = await deriveKey(pin); 
+            const storedVerifier = JSON.parse(localStorage.getItem('yaadgaar_pin_verifier')); 
+            if (!storedVerifier) throw new Error('No PIN set'); 
+            const check = await decryptText(storedVerifier.encryptedData, storedVerifier.iv, pinKey); 
+            if (check !== 'yaadgaar-pin-ok') throw new Error('Wrong PIN'); 
+            const storedPass = JSON.parse(localStorage.getItem('yaadgaar_pin_encrypted_pass')); 
+            const password = await decryptText(storedPass.encryptedData, storedPass.iv, pinKey); 
+            await doUnlockVault(password, status); 
+        } catch (e) { 
+            status.textContent = '❌ Incorrect PIN. Try again.'; 
+            status.className = 'status warning'; 
+            document.getElementById('unlockPin').value = '';
+        } 
+    } else { 
+        const password = document.getElementById('unlockPassword').value; 
+        if (!password) { 
+            status.textContent = '❌ Enter password'; 
+            status.className = 'status warning'; 
+            return; 
+        } 
+        status.textContent = '⏳ Unlocking...'; 
+        status.className = 'status info'; 
+        await doUnlockVault(password, status); 
+    } 
+}
+
+async function doUnlockVault(password, status) { 
+    try { 
+        const c = await deriveKey(password); 
+        const v = localStorage.getItem('yaadgaar_verifier_' + currentUser.email); 
+        if (v) { 
+            const d = JSON.parse(v); 
+            const ch = await decryptText(d.encryptedData, d.iv, c); 
+            if (ch !== 'yaadgaar-verify') throw new Error('wrong'); 
+        } 
+        encryptionKey = c; 
+        
+        // 🔥 FIX: Clear status and hide overlay completely
+        status.style.display = 'none';
+        status.textContent = '';
+        const overlay = document.getElementById('lockOverlay');
+        overlay.classList.add('hidden'); 
+        overlay.style.display = 'none'; 
+        
+        loadAllData(); 
+    } catch (e) { 
+        status.textContent = '❌ Wrong password!'; 
+        status.className = 'status warning'; 
+        document.getElementById('unlockPassword').value = '';
+    } 
+}
+
+// ==========================================
+// NAVIGATION & DATA LOADING
+// ==========================================
+function switchTab(n){document.getElementById('homePage').classList.add('hidden');document.getElementById('memoriesPage').classList.add('hidden');document.getElementById('contactsPage').classList.add('hidden');document.getElementById('profilePage').classList.add('hidden');document.getElementById(n+'Page').classList.remove('hidden');document.querySelectorAll('.nav-item').forEach(i=>i.classList.remove('active'));var m={'home':0,'memories':1,'contacts':2,'profile':3};var items=document.querySelectorAll('.nav-item');if(m[n]!==undefined)items[m[n]].classList.add('active');window.scrollTo(0,0);if(n==='memories'){updatePhotoCounter();updateAudioCounter();loadMemories();}if(n==='contacts'){loadContacts();}if(n==='profile')loadProfile();}
+
+async function loadProfile(){if(!currentUser)return;document.getElementById('profileName').textContent=currentUser.email.split('@')[0];document.getElementById('profileEmail').textContent=currentUser.email;document.getElementById('profileAvatarText').textContent=currentUser.email.charAt(0).toUpperCase();
+  try{const m=await supabase.from('memories').select('*',{count:'exact',head:true}).eq('user_id', currentUser.id);const c=await supabase.from('trusted_contacts').select('*',{count:'exact',head:true}).eq('user_id', currentUser.id);const s=await supabase.from('scheduled_messages').select('*',{count:'exact',head:true}).eq('user_id', currentUser.id);document.getElementById('profStatMem').textContent=m.count||0;document.getElementById('profStatCont').textContent=c.count||0;document.getElementById('profStatCap').textContent=s.count||0;}catch(e){}
+  loadProfilePhoto();
+}
+async function loadSettingsData(){if(!currentUser||!supabase)return;try{var r=await supabase.from('profiles').select('last_login_at, dms_days, dms_paused').eq('user_id',currentUser.id).single();var d=r.data;if(d){var ll=d.last_login_at?new Date(d.last_login_at):null;var ip=d.dms_paused===true;var tb=document.getElementById('vacationModeToggle');if(tb)tb.checked=ip;var ld=document.getElementById('lastLoginDisplay');if(ll){ld.textContent=ll.toLocaleDateString()+' '+ll.toLocaleTimeString();}else{ld.textContent='Just now (First login)';}}}catch(e){}}
+async function loadAllData(){loadMemories();loadContacts();updateStats();checkDeadMansSwitch();updatePhotoCounter();updateAudioCounter();}
+
+// ==========================================
+// VOICE & RECORDING
+// ==========================================
+function initVoice(){const SR=window.SpeechRecognition||window.webkitSpeechRecognition;if(SR){recognition=new SR();recognition.lang='en-US';recognition.continuous=true;recognition.interimResults=false;recognition.onresult=function(ev){let t='';for(let i=ev.resultIndex;i<ev.results.length;i++)t+=ev.results[i][0].transcript;document.getElementById('memoryText').value+=(document.getElementById('memoryText').value?' ':'')+t;};recognition.onerror=function(){alert('❌ Mic Error');stopVoice();};recognition.onend=function(){stopVoice();};}else{document.getElementById('micBtn').style.display='none';}}
+function toggleVoice(){if(!recognition){alert('❌ Browser voice support not available.');return;}if(isListening){recognition.stop();}else{recognition.start();isListening=true;document.getElementById('micBtn').classList.add('listening');}}
+function stopVoice(){isListening=false;document.getElementById('micBtn').classList.remove('listening');}
+function toggleRecord(){if(isRecording){stopRecording();return;}if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){alert('❌ Recording not supported.');return;}navigator.mediaDevices.getUserMedia({audio:true}).then(function(s){let m='audio/webm';if(!MediaRecorder.isTypeSupported(m))m='audio/mp4';mediaRecorder=new MediaRecorder(s,MediaRecorder.isTypeSupported(m)?{mimeType:m}:{});audioChunks=[];mediaRecorder.ondataavailable=function(e){if(e.data.size>0)audioChunks.push(e.data);};mediaRecorder.onstop=function(){s.getTracks().forEach(t=>t.stop());const b=new Blob(audioChunks,{type:mediaRecorder.mimeType||'audio/webm'});if(b.size>5*1024*1024){alert('❌ Voice note too long (max 5MB).');clearRecording();return;}selectedAudio=new File([b],'voice-note.webm',{type:b.type});updateMediaPreview();};mediaRecorder.start();isRecording=true;recSeconds=0;updateRecTimer();recTimerInt=setInterval(function(){recSeconds++;updateRecTimer();},1000);document.getElementById('recBtn').textContent='⏹ Stop';document.getElementById('recBtn').classList.add('recording');}).catch(function(err){alert('❌ Mic permission denied: '+err.message);});}
+function stopRecording(){if(mediaRecorder&&mediaRecorder.state!=='inactive')mediaRecorder.stop();isRecording=false;clearInterval(recTimerInt);document.getElementById('recBtn').textContent='🔴 Start Recording';document.getElementById('recBtn').classList.remove('recording');}
+function updateRecTimer(){const m=Math.floor(recSeconds/60),s=recSeconds%60;document.getElementById('recTimer').textContent=m+':'+(s<10?'0':'')+s;}
+function clearRecording(){selectedAudio=null;updateMediaPreview();clearInterval(recTimerInt);isRecording=false;document.getElementById('recBtn').textContent='🔴 Start Recording';document.getElementById('recBtn').classList.remove('recording');document.getElementById('recTimer').textContent='0:00';}
+function updateMediaPreview(){const p=document.getElementById('mediaPreview');let h='';if(selectedPhoto){if(selectedPhoto.type.startsWith('image/'))h+='<div class="media-preview-item"><img src="'+URL.createObjectURL(selectedPhoto)+'"></div>';else h+='<div class="media-preview-item"><div style="padding:10px">📄 '+selectedPhoto.name+'</div></div>';}if(selectedAudio){h+='<div class="media-preview-item"><audio controls src="'+URL.createObjectURL(selectedAudio)+'" style="width:200px"></audio></div>';}p.innerHTML=h;}
+
+// ==========================================
+// DMS & SETTINGS
+// ==========================================
+function editDmsDays(){document.getElementById('dmsDaysInput').value=DMS_DAYS;document.getElementById('dmsViewMode').classList.add('hidden');document.getElementById('dmsEditMode').classList.remove('hidden');document.getElementById('dmsDaysInput').focus();}
+function cancelDmsEdit(){document.getElementById('dmsEditMode').classList.add('hidden');document.getElementById('dmsViewMode').classList.remove('hidden');}
+async function toggleVacationMode(){if(!currentUser||!supabase)return;var isPaused=document.getElementById('vacationModeToggle').checked;try{const{error}=await supabase.from('profiles').upsert({user_id:currentUser.id,dms_paused:isPaused},{onConflict:'user_id'});if(error){alert('❌ Error updating status');document.getElementById('vacationModeToggle').checked=!isPaused;}else{alert(isPaused?'✅ Vacation Mode ON.':'✅ Vacation Mode OFF.');checkDeadMansSwitch();}}catch(e){alert('❌ Error: '+e.message);}}
+function saveDmsDays(){var v=document.getElementById('dmsDaysInput').value;if(v&&v>=7&&v<=365){DMS_DAYS=parseInt(v);localStorage.setItem('yaadgaar_dms_'+currentUser.email,DMS_DAYS);document.getElementById('dmsDisplayDays').textContent=DMS_DAYS;document.getElementById('dmsEditMode').classList.add('hidden');document.getElementById('dmsViewMode').classList.remove('hidden');alert('✅ Alert set for '+DMS_DAYS+' days!');if(supabase&&currentUser){supabase.from('profiles').upsert({user_id:currentUser.id,dms_days:DMS_DAYS,last_login_at:new Date().toISOString()},{onConflict:'user_id'}).then(r=>{if(r.error)console.log('DMS update error:',r.error);});}checkDeadMansSwitch();}else{alert('❌ Please enter a valid number between 7 and 365.');}}
+async function openForgotPasswordModal(){document.getElementById('forgotPasswordModal').classList.remove('hidden');document.getElementById('forgotPasswordModal').style.display='';document.getElementById('forgotStatus').style.display='none';document.getElementById('forgotEmail').value='';document.getElementById('forgotRecoveryKey').value='';}
+async function sendResetLink(){const e=document.getElementById('forgotEmail').value.trim();const k=document.getElementById('forgotRecoveryKey').value.trim();const s=document.getElementById('forgotStatus');if(!e||!k){s.textContent='❌ Please enter both email and Recovery Key';s.className='status warning';s.style.display='block';return;}const storedKey=localStorage.getItem('yaadgaar_recovery_'+e);if(!storedKey||storedKey!==k){s.textContent='❌ Recovery Key is incorrect!';s.className='status warning';s.style.display='block';return;}s.textContent='⏳ Sending reset link...';s.className='status info';s.style.display='block';try{if(!supabase)await initSupabase();const{error}=await supabase.auth.resetPasswordForEmail(e,{redirectTo:window.location.origin+window.location.pathname});if(error){s.textContent='❌ Failed: '+error.message;s.className='status warning';return;}s.textContent='✅ Reset link sent! Check your inbox.';s.className='status success';setTimeout(()=>{closeModal('forgotPasswordModal');},5000);}catch(e){s.textContent='❌ Error: '+e.message;s.className='status warning';}}
+
+// ==========================================
+// DATA OPERATIONS & CRUD
+// ==========================================
+async function openDeleteModal(){document.getElementById('deleteAccountModal').classList.remove('hidden');document.getElementById('deletePasswordInput').value='';document.getElementById('deleteStatus').style.display='none';document.getElementById('deletePasswordInput').focus();
+  const container=document.getElementById('deleteListContainer');container.innerHTML='<p style="text-align:center;color:var(--muted)">⏳ Calculating...</p>';
+  try{const m=await supabase.from('memories').select('*',{count:'exact',head:true}).eq('user_id', currentUser.id);const c=await supabase.from('trusted_contacts').select('*',{count:'exact',head:true}).eq('user_id', currentUser.id);const s=await supabase.from('scheduled_messages').select('*',{count:'exact',head:true}).eq('user_id', currentUser.id);
+  container.innerHTML=`<ul class="delete-list"><li>${m.count||0} Memories</li><li>${c.count||0} Trusted Contacts</li><li>${s.count||0} Time Capsules</li><li>All uploaded files</li><li>Your account and login history</li></ul>`;}catch(e){container.innerHTML='<p style="color:red">Error loading data</p>';}
+}
+async function executeHardDelete(){if(!currentUser||!supabase){alert('❌ Please login first!');return;}const p=document.getElementById('deletePasswordInput').value;const s=document.getElementById('deleteStatus');const b=document.getElementById('deleteConfirmBtn');if(!p){s.textContent='❌ Please enter your password!';s.className='status warning';s.style.display='block';return;}b.disabled=true;b.textContent='⏳ Verifying...';try{const{error:ve}=await supabase.auth.signInWithPassword({email:currentUser.email,password:p});if(ve){s.textContent='❌ Wrong password!';s.className='status warning';s.style.display='block';b.disabled=false;b.textContent='🔥 Delete Everything';return;}const{data:{session}}=await supabase.auth.getSession();if(!session||!session.access_token)throw new Error('No active session.');const fu=SUPABASE_URL+'/functions/v1/delete-account-';const dr=await fetch(fu,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+session.access_token,'apikey':SUPABASE_KEY},body:JSON.stringify({})});const r=await dr.json();if(!dr.ok)throw new Error(r.error||'Server deletion failed');if(!r.success)throw new Error(r.error||'Deletion failed');try{await supabase.auth.signOut({scope:'global'});}catch(e){}localStorage.clear();currentUser=null;encryptionKey=null;recoveryKey=null;s.textContent='✅ Account deleted.';s.className='status success';s.style.display='block';b.textContent='✓ Done';b.disabled=true;setTimeout(()=>{document.getElementById('dashboard').classList.add('hidden');document.getElementById('bottomNav').classList.add('hidden');document.getElementById('lockBtn').classList.add('hidden');document.getElementById('deleteAccountModal').classList.add('hidden');document.getElementById('authScreen').classList.remove('hidden');setTimeout(()=>{window.location.replace('/?deleted='+Date.now());},2000);},1500);}catch(e){s.textContent='❌ Error: '+e.message;s.className='status warning';s.style.display='block';b.disabled=false;b.textContent='🔥 Try Again';}}
+
+function openAddMemoryModal(){document.getElementById('addMemoryModal').classList.remove('hidden');document.getElementById('addMemoryModal').style.display='';document.getElementById('saveStatus').style.display='none';document.getElementById('memoryTitle').value='';document.getElementById('memoryText').value='';document.getElementById('memoryFile').value='';selectedPhoto=null;selectedAudio=null;updateMediaPreview();}
+function openAddContactModal(){document.getElementById('addContactModal').classList.remove('hidden');document.getElementById('addContactModal').style.display='';document.getElementById('contactName').value='';document.getElementById('contactEmail').value='';document.getElementById('contactPassword').value='';}
+
+async function loadMemories(){if(!supabase)return;var l=document.getElementById('memoryList');l.innerHTML='<p style="text-align:center;color:var(--muted)">⏳ Loading...</p>';allMemories=[];try{var r=await supabase.from('memories').select('*').eq('user_id', currentUser.id).order('created_at',{ascending:false});if(r.error){l.innerHTML='<p style="color:red">Error: '+r.error.message+'</p>';return}allMemories=r.data||[];if(allMemories.length===0){l.innerHTML='<p style="text-align:center;color:var(--muted)">No memories yet. Click "➕ Add New"!</p>';return}renderMemories(allMemories);}catch(e){l.innerHTML='<p style="color:red">Error: '+e.message+'</p>';}}
+function renderMemories(list){const l=document.getElementById('memoryList');if(!list||list.length===0){l.innerHTML='<p style="text-align:center;color:var(--muted)">No memories match your search.</p>';return}l.innerHTML=list.map(m=>{var th='';if(m.encrypted_text&&m.text_iv){var ta=m.encrypted_text.replace(/"/g,'&quot;');var ia=m.text_iv.replace(/"/g,'&quot;');th=`<div class="encrypted-placeholder" data-text="${ta}" data-text-iv="${ia}">🔒 Encrypted Message<br><button onclick="decryptTextAndShow(this)">🔓 Decrypt Message</button></div>`;}else if(m.text){th='<p>'+m.text.replace(/\n/g,'<br>')+'</p>';}var fh='';if(m.image_url||m.document_url){var ivs={photo:null,audio:null,video:null};try{var p=JSON.parse(m.iv);if(Array.isArray(p)){if(m.image_url)ivs.photo=p;else ivs.audio=p;}else if(p){ivs.photo=p.photo;ivs.audio=p.audio;ivs.video=p.video;}}catch(e){}if(m.image_url){fh+=`<div class="encrypted-placeholder" data-url="${m.image_url}" data-iv="${JSON.stringify(ivs.photo||[])}" data-type="image">🔒 Encrypted 📸 Photo<br><button onclick="decryptAndShow(this)">🔓 Decrypt & View</button></div>`;}if(m.document_url){var t=m.file_type==='video'?'video':'audio';var ic=t==='video'?'🎥 Video':'🎤 Voice';fh+=`<div class="encrypted-placeholder" data-url="${m.document_url}" data-iv="${JSON.stringify(ivs[t]||[])}" data-type="${t}">🔒 Encrypted ${ic}<br><button onclick="decryptAndShow(this)">🔓 Decrypt & View</button></div>`;}}return'<div class="memory-item '+(m.pinned?'pinned':'')+'"><button class="pin-btn" onclick="togglePin(\''+m.id+'\','+m.pinned+')">'+(m.pinned?'📌':'📍')+'</button><h3>'+m.title+' <span class="tag">'+m.category+'</span></h3>'+th+fh+'<small>📅 '+new Date(m.created_at).toLocaleDateString()+'</small><button class="btn-small btn-danger" onclick="deleteMemory(\''+m.id+'\')">🗑️ Delete</button></div>';}).join('');}
+function filterMemories(){const q=document.getElementById('memorySearch').value.toLowerCase();const filtered=allMemories.filter(m=>m.title.toLowerCase().includes(q)||(m.text&&m.text.toLowerCase().includes(q)));renderMemories(filtered);}
+
+async function loadContacts(){if(!supabase)return;var l=document.getElementById('contactsList');l.innerHTML='<p style="text-align:center;color:var(--muted)">⏳ Loading...</p>';allContacts=[];try{var r=await supabase.from('trusted_contacts').select('*').eq('user_id', currentUser.id).order('created_at',{ascending:false});if(r.error){l.innerHTML='<p style="color:red">Error: '+r.error.message+'</p>';return}allContacts=r.data||[];if(allContacts.length===0){l.innerHTML='<p style="text-align:center;color:var(--muted)">No contacts yet. Click "➕ Add New"!</p>';return}renderContacts(allContacts);}catch(e){l.innerHTML='<p style="color:red">Error: '+e.message+'</p>';}}
+function renderContacts(list){const l=document.getElementById('contactsList');if(!list||list.length===0){l.innerHTML='<p style="text-align:center;color:var(--muted)">No contacts match.</p>';return}l.innerHTML=list.map(c=>{if(c.encrypted_name&&c.name_iv){var na=c.encrypted_name.replace(/"/g,'&quot;');var ni=c.name_iv.replace(/"/g,'&quot;');var ea=c.encrypted_email?c.encrypted_email.replace(/"/g,'&quot;'):'';var ei=c.email_iv?c.email_iv.replace(/"/g,'&quot;'):'';var pa=c.encrypted_password?c.encrypted_password.replace(/"/g,'&quot;'):'';var pi=c.password_iv?c.password_iv.replace(/"/g,'&quot;'):'';return`<div class="contact-item"><div class="info"><div class="encrypted-placeholder" style="margin:5px 0; padding:10px;" data-name="${na}" data-name-iv="${ni}" data-email="${ea}" data-email-iv="${ei}" data-pwd="${pa}" data-pwd-iv="${pi}">🔒 Encrypted Contact<br><button onclick="decryptContact(this)" style="margin-top:5px;">🔓 Decrypt Contact</button></div></div><button class="btn-small btn-danger" onclick="deleteContact('${c.id}')">🗑️</button></div>`;}else{return`<div class="contact-item"><div class="info"><strong>${c.contact_name||'Unknown'}</strong><small>📧 ${c.contact_email||''}</small></div><button class="btn-small btn-danger" onclick="deleteContact('${c.id}')">🗑️</button></div>`;}}).join('');}
+async function filterContacts(){const q=document.getElementById('contactSearch').value.toLowerCase();if(!q){renderContacts(allContacts);return;}const filtered=[];for(const c of allContacts){let name=c.contact_name||'';if(c.encrypted_name&&c.name_iv&&encryptionKey){try{name=await decryptText(JSON.parse(c.encrypted_name),JSON.parse(c.name_iv),encryptionKey);}catch(e){}}const email=c.plain_contact_email||'';if(name.toLowerCase().includes(q)||email.toLowerCase().includes(q)){filtered.push(c);}}renderContacts(filtered);}
+
+async function updateStats(){if(!supabase)return;try{var m=await supabase.from('memories').select('*',{count:'exact',head:true}).eq('user_id', currentUser.id);var c=await supabase.from('trusted_contacts').select('*',{count:'exact',head:true}).eq('user_id', currentUser.id);var s=await supabase.from('scheduled_messages').select('*',{count:'exact',head:true}).eq('user_id', currentUser.id);document.getElementById('statMemories').textContent=(m.count||0)+'/'+LIMITS.memories;document.getElementById('statContacts').textContent=c.count||0;document.getElementById('statScheduled').textContent=s.count||0;}catch(e){}}
+async function checkDeadMansSwitch(){if(!currentUser||!supabase)return;try{var r=await supabase.from('profiles').select('last_login_at, dms_days, dms_paused').eq('user_id',currentUser.id).single();var d=r.data;if(!d)return;var ll=d.last_login_at?new Date(d.last_login_at):null;var ip=d.dms_paused===true;var tb=document.getElementById('vacationModeToggle');if(tb)tb.checked=ip;var ld=document.getElementById('lastLoginDisplay');const b=document.getElementById('dmsWarningBanner');b.classList.remove('hidden','warning','urgent','critical');b.style.background='';b.style.borderColor='';b.style.color='';if(ip){b.classList.add('warning');b.style.background='rgba(52,152,219,0.15)';b.style.borderColor='#3498db';b.style.color='#3498db';b.innerHTML=`<div class="icon">✈️</div><div class="content"><div class="title">Vacation Mode Active</div><div class="desc">Alerts are paused.</div></div>`;}else if(ll){ld.textContent=ll.toLocaleDateString()+' '+ll.toLocaleTimeString();var ds=Math.floor((new Date()-ll)/(1000*60*60*24));document.getElementById('statDays').textContent=ds;var dr=(d.dms_days||30)-ds;if(dr<=0){b.classList.add('critical');b.innerHTML=`<div class="icon">🚨</div><div class="content"><div class="title">CRITICAL: Vault Activating Now</div><div class="desc">Your inactivity period has ended.</div></div>`;}else if(dr<=7){b.classList.add('urgent');b.innerHTML=`<div class="icon">🚨</div><div class="content"><div class="title">URGENT: ${dr} Days Remaining</div><div class="desc">Your account will activate in ${dr} days.</div></div>`;}else if(dr<=15){b.classList.add('warning');b.innerHTML=`<div class="icon">⚠️</div><div class="content"><div class="title">Warning: ${dr} Days Remaining</div><div class="desc">Your account will activate in ${dr} days.</div></div>`;}else{b.classList.add('hidden');}}else{ld.textContent='Just now (First login)';document.getElementById('statDays').textContent='0';b.classList.add('hidden');}}catch(e){console.log('DMS check skipped:',e);}}
+
+// ==========================================
+// DECRYPT FUNCTIONS
+// ==========================================
+window.decryptContact=async function(b){if(!encryptionKey){alert('🔒 Please login first!');return;}const c=b.parentElement;try{const n=await decryptText(JSON.parse(c.dataset.name),JSON.parse(c.getAttribute('data-name-iv')),encryptionKey);const e=await decryptText(JSON.parse(c.dataset.email),JSON.parse(c.getAttribute('data-email-iv')),encryptionKey);const p=await decryptText(JSON.parse(c.dataset.pwd),JSON.parse(c.getAttribute('data-pwd-iv')),encryptionKey);c.innerHTML=`<strong style="color:var(--accent);">👤 ${n}</strong><br><small>📧 ${e}</small><br><small>🔑 Password: <code style="background:rgba(0,0,0,0.3); padding:2px 6px; border-radius:3px;">${p}</code></small>`;}catch(e){b.textContent='❌ Failed';b.disabled=false;alert('❌ Decrypt failed.');}}
+window.decryptTextAndShow=async function(b){if(!encryptionKey){alert('🔒 Please login first!');return;}const c=b.parentElement;b.textContent='⏳ Decrypting...';b.disabled=true;try{const t=await decryptText(JSON.parse(c.dataset.text),JSON.parse(c.getAttribute('data-text-iv')),encryptionKey);c.innerHTML='<p style="white-space:pre-wrap;">'+t.replace(/\n/g,'<br>')+'</p>';}catch(e){b.textContent='❌ Failed';b.disabled=false;alert('❌ Decrypt failed.');}}
+window.decryptAndShow=async function(b){if(!encryptionKey){alert('🔒 Please login first!');return;}if(!supabase){alert('❌ Supabase not connected!');return;}const c=b.parentElement;const u=c.dataset.url;const ivStr=c.dataset.iv;const t=c.dataset.type;if(!ivStr||ivStr==='[]'||ivStr==='null'){alert('❌ No encryption key for this file.');return;}b.textContent='⏳ Decrypting...';b.disabled=true;try{const ia=JSON.parse(ivStr);const marker='/storage/v1/object/public/media/';const idx=u.indexOf(marker);if(idx===-1)throw new Error('Invalid file URL');const filePath=u.substring(idx+marker.length);const{data,error}=await supabase.storage.from('media').createSignedUrl(filePath,60);if(error)throw new Error('Signed URL failed: '+error.message);const r=await fetch(data.signedUrl);if(!r.ok)throw new Error('Download failed: '+r.status);const eb=await r.arrayBuffer();const db=await decryptFile(eb,ia,encryptionKey);const o=URL.createObjectURL(db);if(t==='image'){c.innerHTML=`<img src="${o}" style="max-width:100%; border-radius:8px;">`;}else if(t==='video'){c.innerHTML=`<video controls src="${o}" style="max-width:100%; border-radius:8px; margin-top:10px;"></video>`;}else if(t==='audio'){c.innerHTML=`<audio controls src="${o}" style="width:100%; margin-top:10px;"></audio>`;}else{c.innerHTML=`<a href="${o}" download style="display:inline-block; padding:10px; background:var(--accent); color:#fff; border-radius:5px; text-decoration:none; margin-top:10px;">📥 Download Decrypted File</a>`;}}catch(e){console.error('Decrypt error:',e);b.textContent='❌ Failed';b.disabled=false;alert('❌ Decrypt failed: '+e.message);}}
+
+// ==========================================
+// CRUD CONTINUED
+// ==========================================
+function openScheduleModal(){document.getElementById('scheduleModal').classList.remove('hidden');document.getElementById('scheduleModal').style.display='';document.getElementById('schedStatus').style.display='none';document.getElementById('schedRecipient').value='';document.getElementById('schedTitle').value='';document.getElementById('schedText').value='';var today=new Date().toISOString().split('T')[0];document.getElementById('schedDate').min=today;document.getElementById('schedDate').value='';}
+async function saveScheduledMessage(){if(!encryptionKey){alert('🔒 Please login first!');return;}if(!supabase)await initSupabase();var recipient=document.getElementById('schedRecipient').value.trim();var title=document.getElementById('schedTitle').value.trim();var date=document.getElementById('schedDate').value;var text=document.getElementById('schedText').value.trim();var status=document.getElementById('schedStatus');if(!recipient||!title||!date||!text){status.textContent='❌ Please fill all fields!';status.className='status warning';status.style.display='block';return;}var selectedDate=new Date(date);var today=new Date();today.setHours(0,0,0,0);if(selectedDate<today){status.textContent='❌ Date must be in the future!';status.className='status warning';status.style.display='block';return;}try{status.textContent='⏳ Encrypting...';status.className='status info';status.style.display='block';const{encryptedData,iv}=await encryptText(text,encryptionKey);var{error}=await supabase.from('scheduled_messages').insert({user_id:currentUser.id,title:title,encrypted_text:JSON.stringify(encryptedData),text_iv:JSON.stringify(iv),recipient_name:recipient,unlock_date:date,is_unlocked:false});if(error)throw error;status.textContent='✅ Time Capsule scheduled!';status.className='status success';setTimeout(()=>{closeModal('scheduleModal');loadCapsuleFolder();updateStats();},1500);}catch(e){status.textContent='❌ Error: '+e.message;status.className='status warning';}}
+function openCapsuleFolder(){openModal('capsuleFolderModal');}
+async function loadCapsuleFolder(){if(!supabase)return;var l=document.getElementById('capsuleListModal');l.innerHTML='<p style="text-align:center;color:var(--muted)">⏳ Loading...</p>';allCapsules=[];try{var r=await supabase.from('scheduled_messages').select('*').eq('user_id', currentUser.id).order('unlock_date',{ascending:true});if(r.error||!r.data||r.data.length===0){l.innerHTML='<p style="text-align:center;color:var(--muted)">No upcoming time capsules yet.</p>';return;}allCapsules=r.data;renderCapsules(allCapsules);}catch(e){l.innerHTML='<p style="color:red">Error loading scheduled.</p>';}}
+function renderCapsules(list){const l=document.getElementById('capsuleListModal');if(!list||list.length===0){l.innerHTML='<p style="text-align:center;color:var(--muted)">No capsules match.</p>';return;}var today=new Date().toISOString().split('T')[0];l.innerHTML=list.map(m=>{var u=m.unlock_date<=today;var viewBtn=u?`<button onclick="viewScheduledMessage('${m.id}')" class="btn-small btn-success" style="margin-top:8px">🔓 Read Message</button>`:`<small style="color:var(--muted)">Unlocks on ${new Date(m.unlock_date).toLocaleDateString()}</small>`;return`<div class="scheduled-item ${u?'unlocked':'locked'}"><h3>${m.title} <span class="scheduled-badge ${u?'unlocked':'locked'}">${u?'UNLOCKED':'LOCKED'}</span></h3><small>👤 For: ${m.recipient_name} | 📅 ${new Date(m.unlock_date).toLocaleDateString()}</small><div>${viewBtn} <button onclick="deleteScheduled('${m.id}')" class="btn-small btn-danger" style="margin-top:8px">🗑️</button></div></div>`;}).join('');}
+function filterCapsules(){const q=document.getElementById('capsuleSearch').value.toLowerCase();const filtered=allCapsules.filter(m=>m.title.toLowerCase().includes(q)||m.recipient_name.toLowerCase().includes(q));renderCapsules(filtered);}
+window.viewScheduledMessage=async function(id){if(!encryptionKey){alert('🔒 Please login first!');return;}if(!supabase)await initSupabase();try{var{data,error}=await supabase.from('scheduled_messages').select('*').eq('id',id).single();if(error)throw error;var today=new Date().toISOString().split('T')[0];if(data.unlock_date>today){alert('🔒 This message is still locked until '+new Date(data.unlock_date).toLocaleDateString());return;}var text=await decryptText(JSON.parse(data.encrypted_text),JSON.parse(data.text_iv),encryptionKey);alert('📨 Message for '+data.recipient_name+':\n\n'+text);}catch(e){alert('❌ Error: '+e.message);}}
+async function deleteScheduled(id){if(!confirm('Delete this scheduled message?'))return;if(!supabase)return;try{await supabase.from('scheduled_messages').delete().eq('id',id);loadCapsuleFolder();updateStats();}catch(e){alert('❌ Error: '+e.message);}}
+
+async function saveMemory(){if(!supabase){await initSupabase();}if(!encryptionKey){alert('🔒 Please login first!');return;}var t=document.getElementById('memoryTitle').value.trim()||'A Memory';var c=document.getElementById('memoryCategory').value;var tx=document.getElementById('memoryText').value.trim();var b=document.getElementById('saveBtn');var s=document.getElementById('saveStatus');if(!tx&&!selectedPhoto&&!selectedAudio){s.textContent='❌ Please write something or select a file!';s.className='status warning';s.style.display='block';return;}try{var{count}=await supabase.from('memories').select('*',{count:'exact',head:true}).eq('user_id', currentUser.id);if(count>=LIMITS.memories){alert('❌ Free limit reached!');s.style.display='none';b.disabled=false;b.textContent='🔒 Encrypt & Save to Cloud';return;}}catch(e){}b.disabled=true;b.textContent='⏳ Encrypting...';s.textContent='⏳ Encrypting...';s.className='status info';s.style.display='block';var iu=null,du=null,dn=null,ft=null;var photoIv=null,audioIv=null;var et=null,ti=null;if(tx){try{const{encryptedData,iv}=await encryptText(tx,encryptionKey);et=JSON.stringify(encryptedData);ti=JSON.stringify(iv);}catch(e){s.textContent='❌ Text encryption failed';s.className='status warning';b.disabled=false;b.textContent='🔒 Encrypt & Save to Cloud';return;}}
+if(selectedPhoto){const isVideo=selectedPhoto.type.startsWith('video/');const isImage=selectedPhoto.type.startsWith('image/');if(isVideo){alert('❌ Video is Premium only.');s.style.display='none';b.disabled=false;b.textContent='🔒 Encrypt & Save to Cloud';selectedPhoto=null;updateMediaPreview();document.getElementById('memoryFile').value='';return;}if(selectedPhoto.size>2*1024*1024){s.textContent='❌ Photo/Document must be under 2MB.';s.className='status warning';b.disabled=false;b.textContent='🔒 Encrypt & Save to Cloud';return;}if(isImage){const pc=await getPhotoCount();if(pc>=LIMITS.photos){alert('❌ Photo limit reached!');s.style.display='none';b.disabled=false;b.textContent='🔒 Encrypt & Save to Cloud';return;}}try{s.textContent='🔒 Encrypting photo...';const{encryptedData,iv}=await encryptFile(selectedPhoto,encryptionKey);photoIv=iv;ft='photo';const eb=new Blob([encryptedData],{type:selectedPhoto.type||'application/octet-stream'});const fn=currentUser.id+'/'+Date.now()+'_enc_'+selectedPhoto.name.replace(/\s+/g,'_');s.textContent='☁️ Uploading photo...';const{error:ue}=await supabase.storage.from('media').upload(fn,eb);if(ue)throw new Error(ue.message);const{data:{publicUrl}}=supabase.storage.from('media').getPublicUrl(fn);iu=publicUrl;}catch(e){s.textContent='❌ Photo upload failed: '+e.message;s.className='status warning';b.disabled=false;b.textContent='🔒 Encrypt & Save to Cloud';return;}}
+if(selectedAudio){const ac=await getAudioCount();if(ac>=LIMITS.audio){alert('❌ Audio limit reached!');s.style.display='none';b.disabled=false;b.textContent='🔒 Encrypt & Save to Cloud';return;}if(selectedAudio.size>5*1024*1024){s.textContent='❌ Voice note must be under 5MB.';s.className='status warning';b.disabled=false;b.textContent='🔒 Encrypt & Save to Cloud';return;}try{s.textContent='🔒 Encrypting voice...';const{encryptedData,iv}=await encryptFile(selectedAudio,encryptionKey);audioIv=iv;ft=ft==='photo'?'photo_audio':'audio';const eb=new Blob([encryptedData],{type:selectedAudio.type||'application/octet-stream'});const fn=currentUser.id+'/'+Date.now()+'_enc_voice.webm';s.textContent='☁️ Uploading voice...';const{error:ue}=await supabase.storage.from('media').upload(fn,eb);if(ue)throw new Error(ue.message);const{data:{publicUrl}}=supabase.storage.from('media').getPublicUrl(fn);du=publicUrl;dn='voice-note.webm';}catch(e){s.textContent='❌ Voice upload failed: '+e.message;s.className='status warning';b.disabled=false;b.textContent='🔒 Encrypt & Save to Cloud';return;}}
+var ivObj=JSON.stringify({photo:photoIv,audio:audioIv});
+try{var dr=await supabase.from('memories').insert({user_id:currentUser.id,title:t,category:c,text:null,encrypted_text:et,text_iv:ti,image_url:iu,document_url:du,document_name:dn,file_type:ft,iv:ivObj,pinned:false});if(dr.error){s.textContent='❌ Save failed: '+dr.error.message;s.className='status warning';}else{s.textContent='✅ Successfully saved!';s.className='status success';document.getElementById('memoryTitle').value='';document.getElementById('memoryText').value='';document.getElementById('memoryFile').value='';selectedPhoto=null;clearRecording();closeModal('addMemoryModal');loadMemories();updateStats();updatePhotoCounter();updateAudioCounter();}}catch(e){s.textContent='❌ Error: '+e.message;s.className='status warning';}b.disabled=false;b.textContent='🔒 Encrypt & Save to Cloud';}
+
+// ADD CONTACT (No Photo - Fast & Clean)
+async function addContact(){
+    if(!supabase){await initSupabase();}
+    if(!encryptionKey){alert('🔒 Please login first!');return;}
+    var n=document.getElementById('contactName').value.trim();
+    var e=document.getElementById('contactEmail').value.trim();
+    var p=document.getElementById('contactPassword').value;
+    if(!n||!e||!p){alert('Please fill all fields!');return;}
+    
+    if(allContacts.length >= LIMITS.contacts) {
+        alert('❌ Free limit reached (10 contacts)! Please upgrade to Premium.');
+        return;
+    }
+
+    var btn=document.getElementById('addContactBtn');
+    btn.disabled=true; btn.textContent='⏳ Saving...';
+    try{
+        const{encryptedData:en,iv:ni}=await encryptText(n,encryptionKey);
+        const{encryptedData:ee,iv:ei}=await encryptText(e,encryptionKey);
+        const{encryptedData:ep,iv:pi}=await encryptText(p,encryptionKey);
+        
+        btn.textContent='⏳ Saving to Database...';
+        var dr=await supabase.from('trusted_contacts').insert({user_id:currentUser.id,contact_name:null,contact_email:null,emergency_password:null,encrypted_name:JSON.stringify(en),name_iv:JSON.stringify(ni),encrypted_email:JSON.stringify(ee),email_iv:JSON.stringify(ei),encrypted_password:JSON.stringify(ep),password_iv:JSON.stringify(pi),plain_contact_email:e});
+        if(dr.error){alert('❌ Error: '+dr.error.message);btn.disabled=false;btn.textContent='🔒 Encrypt & Add Contact';}
+        else{
+            document.getElementById('contactName').value='';document.getElementById('contactEmail').value='';document.getElementById('contactPassword').value='';
+            closeModal('addContactModal');loadContacts();updateStats();alert('✅ Contact encrypted and saved!');btn.disabled=false;btn.textContent='🔒 Encrypt & Add Contact';
+        }
+    }catch(e){alert('❌ Encryption error: '+e.message);btn.disabled=false;btn.textContent='🔒 Encrypt & Add Contact';}
+}
+
+async function togglePin(i,c){if(!supabase)return;try{await supabase.from('memories').update({pinned:!c}).eq('id',i);loadMemories();updatePhotoCounter();}catch(e){}}
+async function deleteMemory(i){if(!confirm('Delete this memory?'))return;if(!supabase)return;try{await supabase.from('memories').delete().eq('id',i);loadMemories();updateStats();updatePhotoCounter();updateAudioCounter();}catch(e){}}
+async function deleteContact(i){if(!confirm('Delete this contact?'))return;if(!supabase)return;try{await supabase.from('trusted_contacts').delete().eq('id',i);loadContacts();updateStats();}catch(e){}}
+async function submitFeedback(){const t=document.getElementById('feedbackText').value.trim();const s=document.getElementById('feedbackStatus');if(!t){s.textContent='❌ Please write something!';s.className='status warning';s.style.display='block';return;}if(!supabase){supabase=await initSupabase();}s.textContent='⏳ Sending...';s.className='status info';s.style.display='block';try{await supabase.from('feedback').insert({user_id:currentUser?currentUser.id:null,message:t});s.textContent='✅ Feedback sent!';s.className='status success';document.getElementById('feedbackText').value='';setTimeout(function(){closeModal('feedbackModal');},1500);}catch(e){s.textContent='❌ Error: '+e.message;s.className='status warning';}}
+
+function useTemplate(t){if(t==='letter'){document.getElementById('memoryTitle').value='My Dear Child';document.getElementById('memoryCategory').value='family';document.getElementById('memoryText').value='My dearest,\n\nWhen you read this, I might not be around.\n\n[Your message]\n\nLove always,\n[Your Name]';}else if(t==='financial'){document.getElementById('memoryTitle').value='Important Financial Info';document.getElementById('memoryCategory').value='financial';document.getElementById('memoryText').value='Bank Accounts:\n- [Bank]: [Account]\n\nDocuments:\n- ID: [Location]\n- Tax ID: [Location]';}else if(t==='will'){document.getElementById('memoryTitle').value='My Last Will & Testament';document.getElementById('memoryCategory').value='financial';document.getElementById('memoryText').value='I, [Your Name], being of sound mind, declare this to be my Last Will.\n\n1. Assets:\n- [Property/Item] to [Person Name]\n\n2. Guardianship:\n- [Guardian Name] for [Child Name]\n\n3. Final Wishes:\n[Your specific instructions]\n\nSigned,\n[Your Name]\nDate: [Date]';}}
+
+async function previewFile(){var f=document.getElementById('memoryFile').files[0];if(!f)return;if(f.size>2*1024*1024){alert('⚠️ Photo/Document must be under 2MB!');document.getElementById('memoryFile').value='';return;}if(f.type.startsWith('image/')){const c=await getPhotoCount();if(c>=LIMITS.photos){alert('❌ Photo limit reached!');document.getElementById('memoryFile').value='';return;}}selectedPhoto=f;updateMediaPreview();}
+
+// ==========================================
+// 🔥 FEATURE 3: SHARE APP FUNCTION
+// ==========================================
+function shareApp() {
+  const shareData = {
+    title: 'Yaadgaar App',
+    text: 'Secure your digital legacy with Yaadgaar! End-to-end encrypted memories and time capsules. Try it now!',
+    url: window.location.href
+  };
+  
+  if (navigator.share) {
+    navigator.share(shareData).catch(console.error);
+  } else {
+    navigator.clipboard.writeText(window.location.href).then(() => {
+      alert('✅ App link copied to clipboard! Share it with your friends.');
+    }).catch(() => {
+      alert('Copy this link to share: ' + window.location.href);
+    });
+  }
+}
+
+// ==========================================
+// NOTIFICATIONS
+// ==========================================
+function openNotifications(){openModal('notificationModal');}
+async function loadNotifications(){
+  const list = document.getElementById('notifList');
+  list.innerHTML = '<p style="text-align:center;color:var(--muted)">⏳ Loading...</p>';
+  let notifs = [];
+  notifs.push({type:'success', title:'🎉 Welcome to Yaadgaar!', msg:'Your vault is secure.', time:'Just now'});
+
+  if(currentUser && supabase) {
+    try {
+      const { data } = await supabase.from('profiles').select('last_login_at, dms_days, dms_paused').eq('user_id', currentUser.id).single();
+      if (data && data.last_login_at && !data.dms_paused) {
+        const daysSince = Math.floor((new Date() - new Date(data.last_login_at)) / (1000*60*60*24));
+        const daysLeft = (data.dms_days || 30) - daysSince;
+        if (daysLeft <= 15 && daysLeft > 0) { notifs.push({type:'urgent', title:`⚠️ Vault Activating in ${daysLeft} Days`, msg:`Inactive for ${daysSince} days.`, time:'Alert'}); } 
+        else if (daysLeft <= 0) { notifs.push({type:'urgent', title:'🚨 CRITICAL: Vault Activating Now', msg:`Inactivity period ended.`, time:'IMMEDIATE'}); }
+      }
+    } catch(e) {}
+  }
+  if(currentUser && supabase) {
+    try {
+      const today = new Date().toISOString().split('T')[0];
+      const { data } = await supabase.from('scheduled_messages').select('*').eq('user_id', currentUser.id).order('unlock_date', {ascending:true}).limit(5);
+      if (data && data.length > 0) {
+        data.forEach(m => {
+          if (m.unlock_date <= today) { notifs.push({type:'success', title:`🔓 Capsule Unlocked: ${m.title}`, msg:`Your message for ${m.recipient_name} is ready to view.`, time:'Unlocked Today'}); } 
+          else { const daysUntil = Math.ceil((new Date(m.unlock_date) - new Date()) / (1000*60*60*24)); notifs.push({type:'info', title:`🔒 Upcoming: ${m.title}`, msg:`Unlocks in ${daysUntil} days for ${m.recipient_name}.`, time:`Scheduled: ${new Date(m.unlock_date).toLocaleDateString()}`}); }
+        });
+      } else { notifs.push({type:'info', title:'📅 No Upcoming Capsules', msg:'Schedule a time capsule to see it here.', time:'System'}); }
+    } catch(e) {}
+  }
+  list.innerHTML = notifs.map(n => `<div class="notif-item ${n.type}"><strong>${n.title}</strong><p style="font-size:13px; margin-top:5px;">${n.msg}</p><span class="time">${n.time}</span></div>`).join('');
+}
+
+// ==========================================
+// 🔥 INITIALIZATION & SPLASH SCREEN LOGIC
+// ==========================================
+document.addEventListener('DOMContentLoaded', function() {
+  initVoice();
+  document.getElementById('authScreen').classList.add('hidden');
+  document.getElementById('dashboard').classList.add('hidden');
+  
+  // Hide Splash Screen after 2.5 seconds
+  setTimeout(() => {
+    document.getElementById('splashScreen').classList.add('hidden');
+  }, 2500);
+  
+  checkUser();
+});
+</script>
+</body>
+</html>
