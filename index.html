@@ -8,6 +8,16 @@
 <link rel="manifest" href="manifest.json">
 <link rel="icon" type="image/png" href="https://cdn-icons-png.flaticon.com/512/2913/2913520.png">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <!-- Service Worker Registration -->
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('./sw.js')
+        .then(reg => console.log('✅ Service Worker registered!', reg.scope))
+        .catch(err => console.log('❌ Service Worker failed:', err));
+    });
+  }
+</script>
 <style>
 :root{--bg:linear-gradient(135deg,#1a1a2e 0%,#16213e 100%);--card:rgba(255,255,255,0.05);--border:rgba(255,255,255,0.1);--text:#e4e4e4;--muted:#888;--accent:#f39c12;--accent2:#e67e22;--input-bg:rgba(0,0,0,0.3);--input-border:#444}
 body.light{--bg:linear-gradient(135deg,#f5f7fa 0%,#c3cfe2 100%);--card:rgba(255,255,255,0.9);--border:rgba(0,0,0,0.1);--text:#2c3e50;--muted:#7f8c8d;--input-bg:#fff;--input-border:#ddd}
