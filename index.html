@@ -161,16 +161,13 @@ button:hover{opacity:0.9}button:disabled{opacity:0.5;cursor:not-allowed}
 
 <div class="container">
   <!-- ONBOARDING -->
-  <div id="onboardingScreen" class="onboard-wrap hidden">
-    <span class="slide-counter" id="slideCounter">1 / 3</span>
-    <button class="skip-btn" onclick="completeOnboarding()">Skip →</button>
-    <div class="onboard-track" id="onboardTrack">
-      <div class="onb-slide"><span class="big-icon">🕯️</span><h2>Welcome to Yaadgaar</h2><p class="en-text">"Some memories are too precious to be lost."</p></div>
-      <div class="onb-slide"><span class="big-icon">⚡</span><h2>Why Yaadgaar?</h2><p class="en-text">Bank-Level Encryption. Time Capsules. Dead Man's Switch.</p></div>
-      <div class="onb-slide"><span class="big-icon">🚀</span><h2>Your Voice. Their Future.</h2><p class="en-text">"Because love deserves to last forever."</p><button onclick="completeOnboarding()" style="max-width:320px;margin:20px auto 0;">🚀 Get Started — It's Free</button></div>
-    </div>
-    <div class="onb-dots" id="onbDots"><div class="onb-dot active" onclick="goToSlide(0)"></div><div class="onb-dot" onclick="goToSlide(1)"></div><div class="onb-dot" onclick="goToSlide(2)"></div></div>
-    <div class="onb-btn-row"><button class="btn-secondary" id="onbBackBtn" onclick="prevSlide()" style="display:none">← Back</button><button id="onbNextBtn" onclick="nextSlide()">Next →</button></div>
+  <!-- NEW BEAUTIFUL WELCOME SCREEN -->
+  <div id="onboardingScreen" class="hidden" style="position:fixed; inset:0; z-index:9998; background:url('./welcome.png') no-repeat center center/cover; display:flex; flex-direction:column; justify-content:flex-end; align-items:center; padding:20px;">
+    
+    <!-- Get Started Button -->
+    <button onclick="completeOnboarding()" style="width:100%; max-width:300px; padding:16px; background:linear-gradient(135deg, #f39c12, #e67e22); color:#fff; border:none; border-radius:30px; font-size:18px; font-weight:bold; margin-bottom:40px; box-shadow:0 10px 20px rgba(0,0,0,0.5); cursor:pointer;">
+      🚀 Get Started — It's Free
+    </button>
   </div>
 
   <!-- AUTH SCREEN -->
